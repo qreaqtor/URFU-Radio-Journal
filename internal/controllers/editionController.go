@@ -12,8 +12,8 @@ type EditionController struct {
 	service *services.EditionService
 }
 
-func NewEditionController() EditionController {
-	return EditionController{service: services.NewEditionService()}
+func NewEditionController() *EditionController {
+	return &EditionController{service: services.NewEditionService()}
 }
 
 func (this *EditionController) createEdition(ctx *gin.Context) {

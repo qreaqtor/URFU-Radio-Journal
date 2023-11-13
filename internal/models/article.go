@@ -11,5 +11,5 @@ type Article struct {
 	Keywords    []string  `json:"keywords" bson:"keywords" binding:"required"`
 	FileName    string    `json:"fileName" bson:"fileName" binding:"required"`
 	Literature  []string  `json:"literature" bson:"literature" binding:"required"`
-	Publication time.Time `json:"publication" bson:"publication" binding:"required"`
+	Publication time.Time `json:"publication" bson:"publication" binding:"required" time_format:"yyyy-mm-dd"`
 }

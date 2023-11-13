@@ -27,7 +27,7 @@ func init() {
 
 	user, password, dbName := os.Getenv("MONGO_USER"), os.Getenv("MONGO_PASSWORD"), os.Getenv("DB_NAME")
 	ctx = context.TODO()
-	link := fmt.Sprintf("mongodb+srv://%s:%s@cluster0.5k1ygzv.mongodb.net/", user, password)
+	link := fmt.Sprintf("mongodb+srv://%s:%s@cluster0.eiptj34.mongodb.net/", user, password)
 
 	mongoconn := options.Client().ApplyURI(link)
 	client, err := mongo.Connect(ctx, mongoconn)
