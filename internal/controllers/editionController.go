@@ -17,7 +17,7 @@ func NewEditionController() *EditionController {
 }
 
 func (this *EditionController) createEdition(ctx *gin.Context) {
-	var edition models.Edition
+	var edition models.EditionCreate
 	if err := ctx.ShouldBindJSON(&edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -40,7 +40,7 @@ func (this *EditionController) getAllEditions(ctx *gin.Context) {
 }
 
 func (this *EditionController) updateEdition(ctx *gin.Context) {
-	var edition models.Edition
+	var edition models.EditionUpdate
 	if err := ctx.ShouldBindJSON(&edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
