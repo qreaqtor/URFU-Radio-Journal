@@ -30,6 +30,6 @@ type EditionUpdate struct {
 	Title     string             `json:"title" bson:"title,omitempty" binding:"-"`
 	FileName  string             `json:"fileName" bson:"fileName,omitempty" binding:"-"`
 	CoverName string             `json:"coverName" bson:"coverName,omitempty" binding:"-"`
-	Articles  []Article          `json:"articles" bson:"articles,omitempty" binding:"-"`
-	Comments  []Comment          `json:"comments" bson:"comments,omitempty" binding:"-"`
+	Articles  []Article          `json:"articles" bson:"articles,omitempty" binding:"dive"`
+	Comments  []Comment          `json:"comments" bson:"comments,omitempty" binding:"dive"`
 }

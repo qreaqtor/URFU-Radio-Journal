@@ -10,8 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const layout = "0000-00-00"
-
 type EditionService struct {
 	ctx     context.Context
 	storage *mongo.Collection
@@ -54,16 +52,5 @@ func (this *EditionService) DeleteEdition(id string) error {
 	}
 	filter := bson.M{"_id": editionId}
 	_, err = this.storage.DeleteOne(this.ctx, filter)
-	return err
-}
-
-func (this *EditionService) AddComment(id string, newComment models.Comment) error {
-	editionId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-	filter := bson.M{"_id": editionId}
-	update := bson.M{"$push": bson.M{"comments": newComment}}
-	_, err = this.storage.UpdateOne(this.ctx, filter, update)
 	return err
 }
