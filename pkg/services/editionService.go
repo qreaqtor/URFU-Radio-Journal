@@ -23,7 +23,7 @@ func NewEditionService() *EditionService {
 }
 
 func (this *EditionService) CreateEdition(edition models.EditionCreate) error {
-	edition.Comments = make([]models.Comment, 0)
+	edition.Comments = make([]primitive.ObjectID, 0)
 	_, err := this.storage.InsertOne(this.ctx, edition)
 	return err
 }
