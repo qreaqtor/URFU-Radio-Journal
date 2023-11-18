@@ -5,30 +5,18 @@ import (
 	"net/http"
 	"runtime/debug"
 	"urfu-radio-journal/internal/models"
+	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	store cookie.Store
+	auth *services.AuthService
 }
 
 func NewAuthController() *AuthController {
-	store := cookie.NewStore([]byte("secret"))
-	store.Options(sessions.Options{
-		MaxAge:   3600, // seconds
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false, // only for HTTPS
-	})
-
-	return &AuthController{store: store}
-}
-
-func checkAdmin(admin models.Admin) bool {
-	return admin.Username == "admin" && admin.Password == "admin"
+	return &AuthController{auth: services.NewAuthService()}
 }
 
 func (this *AuthController) login(ctx *gin.Context) {
@@ -38,16 +26,11 @@ func (this *AuthController) login(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if checkAdmin(admin) {
-		session.Set("admin", admin.Username)
-		if err := session.Save(); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "can't save session"})
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	if err := this.auth.Login(admin, session); err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
 func (this *AuthController) logout(ctx *gin.Context) {
@@ -65,7 +48,7 @@ func (this *AuthController) logout(ctx *gin.Context) {
 }
 
 func (this *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.Use(sessions.Sessions("admin", this.store))
+	rg.Use(sessions.Sessions("admin", this.auth.Store))
 
 	rg.POST("/login", this.login)
 	rg.GET("/logout", this.logout)
@@ -94,5 +77,5 @@ func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
 }
 
 func (this *AuthController) SessionsHandler() gin.HandlerFunc {
-	return sessions.Sessions("admin", this.store)
+	return sessions.Sessions("admin", this.auth.Store)
 }
