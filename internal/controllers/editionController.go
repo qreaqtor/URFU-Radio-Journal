@@ -62,9 +62,10 @@ func (this *EditionController) deleteEdition(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *EditionController) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.POST("/create", this.createEdition)
-	rg.GET("/get/all", this.getAllEditions)
-	rg.PUT("/update", this.updateEdition)
-	rg.DELETE("/delete/:id", this.deleteEdition)
+func (this *EditionController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+	publicRg.GET("/get/all", this.getAllEditions)
+
+	adminRg.POST("/create", this.createEdition)
+	adminRg.PUT("/update", this.updateEdition)
+	adminRg.DELETE("/delete/:id", this.deleteEdition)
 }

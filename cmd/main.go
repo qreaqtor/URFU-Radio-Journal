@@ -12,9 +12,16 @@ import (
 func main() {
 	router := gin.Default()
 
-	editionPath := router.Group("/edition")
+	authPath := router.Group("/admin/auth")
+	auth := controllers.NewAuthController()
+	auth.RegisterRoutes(authPath)
+
+	publicEditionPath := router.Group("/editions")
+	adminEditionPath := router.Group("/admin/editions")
+	adminEditionPath.Use(auth.SessionsHandler())
+	adminEditionPath.Use(auth.AuthMiddleware())
 	edition := controllers.NewEditionController()
-	edition.RegisterRoutes(editionPath)
+	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
 
 	log.Fatal(router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }
