@@ -35,20 +35,15 @@ func (this *AuthController) login(ctx *gin.Context) {
 
 func (this *AuthController) logout(ctx *gin.Context) {
 	session := sessions.Default(ctx)
-	if admin := session.Get("admin"); admin != nil {
-		session.Delete("admin")
-		if err := session.Save(); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "can't save session"})
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	if err := this.auth.Logout(session); err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
 func (this *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.Use(sessions.Sessions("admin", this.auth.Store))
+	rg.Use(sessions.Sessions("admin", this.auth.GetStore()))
 
 	rg.POST("/login", this.login)
 	rg.GET("/logout", this.logout)
@@ -77,5 +72,5 @@ func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
 }
 
 func (this *AuthController) SessionsHandler() gin.HandlerFunc {
-	return sessions.Sessions("admin", this.auth.Store)
+	return sessions.Sessions("admin", this.auth.GetStore())
 }
