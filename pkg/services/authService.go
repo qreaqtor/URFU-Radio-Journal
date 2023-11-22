@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"os"
+	"strconv"
 	"urfu-radio-journal/internal/models"
 
 	"github.com/gin-contrib/sessions"
@@ -13,9 +15,11 @@ type AuthService struct {
 }
 
 func NewAuthService() *AuthService {
-	store := cookie.NewStore([]byte("secret"))
+	secret := os.Getenv("SECRET")
+	cookieMaxAge, _ := strconv.Atoi(os.Getenv("COOKIE_MAX_AGE"))
+	store := cookie.NewStore([]byte(secret))
 	store.Options(sessions.Options{
-		MaxAge:   3600, // seconds
+		MaxAge:   cookieMaxAge, // seconds
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   false, // only for HTTPS
@@ -25,7 +29,9 @@ func NewAuthService() *AuthService {
 }
 
 func checkAdmin(admin models.Admin) bool {
-	return admin.Username == "admin" && admin.Password == "admin"
+	password := os.Getenv("ADMIN_PASSWORD")
+	username := os.Getenv("ADMIN_USERNAME")
+	return admin.Username == username && admin.Password == password
 }
 
 func (this *AuthService) Login(admin models.Admin, session sessions.Session) error {
