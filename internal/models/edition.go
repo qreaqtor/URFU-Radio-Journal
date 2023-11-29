@@ -7,7 +7,7 @@ import (
 )
 
 type EditionCreate struct {
-	Title     string    `json:"title" bson:"title" binding:"required"`
+	Title     text      `json:"title" bson:"title" binding:"required,dive"`
 	FileName  string    `json:"fileName" bson:"fileName" binding:"required"`
 	CoverName string    `json:"coverName" bson:"coverName" binding:"required"`
 	Date      time.Time `json:"date" bson:"date" binding:"required"`
@@ -16,7 +16,7 @@ type EditionCreate struct {
 
 type EditionRead struct {
 	Id        primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
-	Title     string             `json:"title" bson:"title" binding:"required"`
+	Title     text               `json:"title" bson:"title" binding:"required,dive"`
 	FileName  string             `json:"fileName" bson:"fileName" binding:"required"`
 	CoverName string             `json:"coverName" bson:"coverName" binding:"required"`
 	Date      time.Time          `json:"date" bson:"date" binding:"required"`
@@ -25,7 +25,7 @@ type EditionRead struct {
 
 type EditionUpdate struct {
 	Id        primitive.ObjectID `json:"id" binding:"required"`
-	Title     string             `json:"title" bson:"title,omitempty" binding:"-"`
+	Title     text               `json:"title" bson:"title,omitempty" binding:"dive"`
 	FileName  string             `json:"fileName" bson:"fileName,omitempty" binding:"-"`
 	CoverName string             `json:"coverName" bson:"coverName,omitempty" binding:"-"`
 	Articles  []Article          `json:"articles" bson:"articles,omitempty" binding:"dive"`

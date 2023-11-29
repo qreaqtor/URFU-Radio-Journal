@@ -7,21 +7,21 @@ import (
 )
 
 type CommentCreate struct {
-	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
-	Content    string             `json:"content" bson:"content" binding:"required"`
+	ArticleId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
+	Content    text               `json:"content" bson:"content" binding:"required,dive"`
 	Date       time.Time          `json:"date" bson:"date" binding:"required"`
 	IsApproved bool               `bson:"isApproved"`
 }
 
 type CommentRead struct {
 	Id         primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
-	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
-	Content    string             `json:"content" bson:"content" binding:"required"`
+	ArticleId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
+	Content    text               `json:"content" bson:"content" binding:"required,dive"`
 	Date       time.Time          `json:"date" bson:"date" binding:"required"`
 	IsApproved bool               `json:"isApproved" bson:"isApproved" binding:"required"`
 }
 
 type CommentUpdate struct {
 	Id      primitive.ObjectID `json:"id" bson:"-" binding:"required"`
-	Content string             `json:"content" bson:"content" binding:"required"`
+	Content text               `json:"content" bson:"content" binding:"required,dive"`
 }
