@@ -32,7 +32,11 @@ func (this *CommentsController) create(ctx *gin.Context) {
 }
 
 func (this *CommentsController) getAll(ctx *gin.Context) {
-	onlyApproved, err := strconv.ParseBool(ctx.Query("onlyApproved"))
+	onlyApprovedStr := ctx.Query("onlyApproved")
+	if onlyApprovedStr == "" {
+		onlyApprovedStr = "false"
+	}
+	onlyApproved, err := strconv.ParseBool(onlyApprovedStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

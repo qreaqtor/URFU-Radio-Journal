@@ -12,7 +12,7 @@ type ArticleController struct {
 	articles *services.ArticleService
 }
 
-func NewArticlecontroller() *ArticleController {
+func NewArticleController() *ArticleController {
 	return &ArticleController{articles: services.NewArticleService()}
 }
 
