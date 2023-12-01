@@ -21,13 +21,18 @@ func (this *FilesController) uploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": "Wrong gateway."})
 		return
 	}
-	resourceId := ctx.Param("resourceId")
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	filePath, err := this.files.GetFilePath(file.Filename, resourceId, resourceType)
+	filePath, err := this.files.GetFilePath(file.Filename, resourceType)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	identifier := ctx.Query("identifier")
+	url, err := this.files.GetFileURL(file.Filename, resourceType, filePath, identifier)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -37,7 +42,10 @@ func (this *FilesController) uploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"url":     url,
+	})
 }
 
 func (this *FilesController) downloadFile(ctx *gin.Context) {
@@ -58,5 +66,5 @@ func (this *FilesController) downloadFile(ctx *gin.Context) {
 func (this *FilesController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
 	publicRg.GET("/download/:resourceType/:filename", this.downloadFile)
 
-	adminRg.POST("/upload/:resourceType/:resourceId", this.uploadFile)
+	adminRg.POST("/upload/:resourceType", this.uploadFile)
 }
