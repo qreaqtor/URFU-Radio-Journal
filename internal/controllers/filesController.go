@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
@@ -16,28 +17,19 @@ func NewFilesController() *FilesController {
 }
 
 func (this *FilesController) uploadFile(ctx *gin.Context) {
-	resourceType := ctx.Param("resourceType")
-	if resourceType != "editions" && resourceType != "articles" {
-		ctx.JSON(http.StatusBadGateway, gin.H{"message": "Wrong gateway."})
-		return
-	}
+	resourceType := ctx.MustGet("resourceType").(string)
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	filePath, err := this.files.GetFilePath(file.Filename, resourceType)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
 	identifier := ctx.Query("identifier")
-	url, err := this.files.GetFileURL(file.Filename, resourceType, filePath, identifier)
+	url, path, err := this.files.GetFileURL(file.Filename, resourceType, identifier)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err = ctx.SaveUploadedFile(file, filePath)
+	err = ctx.SaveUploadedFile(file, path)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -49,13 +41,9 @@ func (this *FilesController) uploadFile(ctx *gin.Context) {
 }
 
 func (this *FilesController) downloadFile(ctx *gin.Context) {
-	resourceType := ctx.Param("resourceType")
-	if resourceType != "editions" && resourceType != "articles" {
-		ctx.JSON(http.StatusBadGateway, gin.H{"message": "Wrong gateway."})
-		return
-	}
-	filename := ctx.Param("filename")
-	path, err := this.files.CheckFilePath(filename, resourceType)
+	resourceType := ctx.MustGet("resourceType").(string)
+	identifier := ctx.Param("identifier")
+	path, err := this.files.CheckFilePath(identifier, resourceType)
 	if err == nil {
 		ctx.File(path)
 		return
@@ -64,7 +52,27 @@ func (this *FilesController) downloadFile(ctx *gin.Context) {
 }
 
 func (this *FilesController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
-	publicRg.GET("/download/:resourceType/:filename", this.downloadFile)
+	publicRg.Use(this.resourceTypeMiddleware())
+	adminRg.Use(this.resourceTypeMiddleware())
 
-	adminRg.POST("/upload/:resourceType", this.uploadFile)
+	publicRg.GET("/editions/download/:identifier", this.downloadFile)
+	publicRg.GET("/articles/download/:identifier", this.downloadFile)
+
+	adminRg.POST("/editions/upload", this.uploadFile)
+	adminRg.POST("/articles/upload", this.uploadFile)
+}
+
+func (this *FilesController) resourceTypeMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		reqPath := ctx.Request.URL.Path
+		pathParts := strings.Split(reqPath, "/")
+		if pathParts[3] != "editions" && pathParts[3] != "articles" {
+			ctx.JSON(http.StatusBadGateway, gin.H{"message": "Wrong gateway."})
+			ctx.Abort()
+			return
+		}
+		ctx.Set("resourceType", pathParts[3])
+		ctx.Next()
+		return
+	}
 }

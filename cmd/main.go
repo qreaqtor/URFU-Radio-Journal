@@ -43,7 +43,7 @@ func main() {
 	comments := controllers.NewCommentsController()
 	comments.RegisterRoutes(publicCommentsPath, adminCommentsPath)
 
-	publicFilesPath := router.Group("/files")
+	publicFilesPath := router.Group("/public/files")
 
 	adminFilesPath := router.Group("/admin/files")
 	adminFilesPath.Use(auth.SessionsHandler())
