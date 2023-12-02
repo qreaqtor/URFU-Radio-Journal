@@ -22,11 +22,15 @@ func (this *ArticleController) createArticle(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.articles.CreateArticle(article); err != nil {
+	articleId, err := this.articles.CreateArticle(article)
+	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"id":      articleId,
+	})
 }
 
 func (this *ArticleController) getAllArticles(ctx *gin.Context) {
