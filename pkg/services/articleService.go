@@ -22,9 +22,10 @@ func NewArticleService() *ArticleService {
 	}
 }
 
-func (this *ArticleService) CreateArticle(article models.ArticleCreate) error {
-	_, err := this.storage.InsertOne(this.ctx, article)
-	return err
+func (this *ArticleService) CreateArticle(article models.ArticleCreate) (id primitive.ObjectID, err error) {
+	res, err := this.storage.InsertOne(this.ctx, article)
+	id = res.InsertedID.(primitive.ObjectID)
+	return
 }
 
 func (this *ArticleService) GetAllArticles() (articles []models.ArticleRead, err error) {

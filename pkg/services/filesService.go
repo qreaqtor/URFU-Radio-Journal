@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"urfu-radio-journal/pkg/db"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,9 +38,8 @@ func getDirs() map[string]string {
 	return dirs
 }
 
-func (this *FilesService) CheckFilePath(identifier, resourceType string) (path string, err error) {
-	filepathIdStr := strings.Split(identifier, ".")[0]
-	filepathId, err := primitive.ObjectIDFromHex(filepathIdStr)
+func (this *FilesService) CheckFilePath(filePathIdStr, resourceType string) (path string, err error) {
+	filePathId, err := primitive.ObjectIDFromHex(filePathIdStr)
 	if err != nil {
 		return
 	}
@@ -49,35 +47,29 @@ func (this *FilesService) CheckFilePath(identifier, resourceType string) (path s
 		Id   primitive.ObjectID
 		Path string
 	}
-	filter := bson.M{"_id": filepathId}
+	filter := bson.M{"_id": filePathId}
 	err = this.storage.FindOne(*this.ctx, filter).Decode(&filePath)
 	path = filePath.Path
 	return
 }
 
-func (this *FilesService) GetFileURL(filename, resourceType, identifier string) (url, path string, err error) {
+func (this *FilesService) GetFileURL(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
 	if path, err = this.getFilePath(filename, resourceType); err != nil {
 		return
 	}
-	filepathIdStr := strings.Split(identifier, ".")[0]
-	if filepathIdStr != "" {
-		var filepathId primitive.ObjectID
-		filepathId, err = primitive.ObjectIDFromHex(filepathIdStr)
+	if filePathIdStr != "" {
+		filePathId, err = primitive.ObjectIDFromHex(filePathIdStr)
 		if err != nil {
 			return
 		}
-		if err = this.updateFilePath(path, filepathId); err != nil {
-			return
-		}
-	} else {
-		res, err := this.storage.InsertOne(*this.ctx, bson.M{"path": path})
-		if err != nil {
-			return "", path, err
-		}
-		ext := filepath.Ext(filename)
-		identifier = res.InsertedID.(primitive.ObjectID).Hex() + ext
+		err = this.updateFilePath(path, filePathId)
+		return
 	}
-	url = fmt.Sprintf("/files/download/%s/%s", resourceType, identifier)
+	res, err := this.storage.InsertOne(*this.ctx, bson.M{"path": path})
+	if err != nil {
+		return
+	}
+	filePathId = res.InsertedID.(primitive.ObjectID)
 	return
 }
 
