@@ -13,15 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type FilesService struct {
+type FilePathsService struct {
 	ctx         *context.Context
 	storage     *mongo.Collection
 	basePath    string
 	directories map[string]string
 }
 
-func NewFilesService() *FilesService {
-	return &FilesService{
+func NewFilesService() *FilePathsService {
+	return &FilePathsService{
 		ctx:         db.GetContext(),
 		storage:     db.GetStorage("filePaths"),
 		basePath:    "../attachments",
@@ -38,7 +38,7 @@ func getDirs() map[string]string {
 	return dirs
 }
 
-func (this *FilesService) CheckFilePath(filePathIdStr, resourceType string) (path string, err error) {
+func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, err error) {
 	filePathId, err := primitive.ObjectIDFromHex(filePathIdStr)
 	if err != nil {
 		return
@@ -53,8 +53,8 @@ func (this *FilesService) CheckFilePath(filePathIdStr, resourceType string) (pat
 	return
 }
 
-func (this *FilesService) GetFileURL(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
-	if path, err = this.getFilePath(filename, resourceType); err != nil {
+func (this *FilePathsService) GetFileURL(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
+	if path, err = this.generateFilePath(filename, resourceType); err != nil {
 		return
 	}
 	if filePathIdStr != "" {
@@ -73,7 +73,30 @@ func (this *FilesService) GetFileURL(filename, resourceType, filePathIdStr strin
 	return
 }
 
-func (this *FilesService) updateFilePath(path string, filepathId primitive.ObjectID) error {
+func (this *FilePathsService) DeleteHandler(data []primitive.ObjectID) error {
+	var filePaths []struct {
+		Id   primitive.ObjectID
+		Path string
+	}
+	filter := bson.M{"_id": bson.M{"$in": data}}
+	cur, err := this.storage.Find(*this.ctx, filter)
+	if err := cur.All(*this.ctx, &filePaths); err != nil {
+		return err
+	}
+	for _, v := range filePaths {
+		path := v.Path
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
+	res, err := this.storage.DeleteMany(*this.ctx, filter)
+	if res.DeletedCount == 0 {
+		return errors.New("Document not found.")
+	}
+	return err
+}
+
+func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
 	var filePath struct {
 		Id   primitive.ObjectID
 		Path string
@@ -90,7 +113,7 @@ func (this *FilesService) updateFilePath(path string, filepathId primitive.Objec
 	return err
 }
 
-func (this *FilesService) getFilePath(filename, resourceType string) (path string, err error) {
+func (this *FilePathsService) generateFilePath(filename, resourceType string) (path string, err error) {
 	ext := filepath.Ext(filename)
 	if dir, ok := this.directories[ext]; ok {
 		path = fmt.Sprintf("%s/%s/%s/%s", this.basePath, resourceType, dir, filename)

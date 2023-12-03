@@ -6,17 +6,18 @@ import (
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type FilesController struct {
-	files *services.FilesService
+type FilePathsController struct {
+	filePaths *services.FilePathsService
 }
 
-func NewFilesController() *FilesController {
-	return &FilesController{files: services.NewFilesService()}
+func NewFilesController() *FilePathsController {
+	return &FilePathsController{filePaths: services.NewFilesService()}
 }
 
-func (this *FilesController) uploadFile(ctx *gin.Context) {
+func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 	resourceType := ctx.MustGet("resourceType").(string)
 	file, err := ctx.FormFile("file")
 	if err != nil {
@@ -24,7 +25,7 @@ func (this *FilesController) uploadFile(ctx *gin.Context) {
 		return
 	}
 	filePathId := ctx.Query("filePathId")
-	url, path, err := this.files.GetFileURL(file.Filename, resourceType, filePathId)
+	url, path, err := this.filePaths.GetFileURL(file.Filename, resourceType, filePathId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -40,10 +41,9 @@ func (this *FilesController) uploadFile(ctx *gin.Context) {
 	})
 }
 
-func (this *FilesController) downloadFile(ctx *gin.Context) {
-	resourceType := ctx.MustGet("resourceType").(string)
+func (this *FilePathsController) downloadFile(ctx *gin.Context) {
 	filePathId := ctx.Param("filePathId")
-	path, err := this.files.CheckFilePath(filePathId, resourceType)
+	path, err := this.filePaths.CheckFilePath(filePathId)
 	if err == nil {
 		ctx.File(path)
 		return
@@ -51,9 +51,8 @@ func (this *FilesController) downloadFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 }
 
-func (this *FilesController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+func (this *FilePathsController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
 	publicRg.Use(this.resourceTypeMiddleware())
-	adminRg.Use(this.resourceTypeMiddleware())
 
 	publicRg.GET("/editions/download/:filePathId", this.downloadFile)
 	publicRg.GET("/articles/download/:filePathId", this.downloadFile)
@@ -62,7 +61,7 @@ func (this *FilesController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *
 	adminRg.POST("/articles/upload", this.uploadFile)
 }
 
-func (this *FilesController) resourceTypeMiddleware() gin.HandlerFunc {
+func (this *FilePathsController) resourceTypeMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		reqPath := ctx.Request.URL.Path
 		pathParts := strings.Split(reqPath, "/")
@@ -75,4 +74,8 @@ func (this *FilesController) resourceTypeMiddleware() gin.HandlerFunc {
 		ctx.Next()
 		return
 	}
+}
+
+func (this *FilePathsController) GetDeleteHandler() func([]primitive.ObjectID) error {
+	return this.filePaths.DeleteHandler
 }

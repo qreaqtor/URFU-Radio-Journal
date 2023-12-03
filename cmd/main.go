@@ -16,23 +16,14 @@ func main() {
 	auth := controllers.NewAuthController()
 	auth.RegisterRoutes(authPath)
 
-	publicEditionPath := router.Group("/editions")
+	publicFilesPath := router.Group("/public/files")
 
-	adminEditionPath := router.Group("/admin/editions")
-	adminEditionPath.Use(auth.SessionsHandler())
-	adminEditionPath.Use(auth.AuthMiddleware())
+	adminFilesPath := router.Group("/admin/files")
+	adminFilesPath.Use(auth.SessionsHandler())
+	adminFilesPath.Use(auth.AuthMiddleware())
 
-	edition := controllers.NewEditionController()
-	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
-
-	publicArticlePath := router.Group("/articles")
-
-	adminArticlePath := router.Group("/admin/articles")
-	adminArticlePath.Use(auth.SessionsHandler())
-	adminArticlePath.Use(auth.AuthMiddleware())
-
-	article := controllers.NewArticleController()
-	article.RegisterRoutes(publicArticlePath, adminArticlePath)
+	files := controllers.NewFilesController()
+	files.RegisterRoutes(publicFilesPath, adminFilesPath)
 
 	publicCommentsPath := router.Group("/comments")
 
@@ -43,14 +34,23 @@ func main() {
 	comments := controllers.NewCommentsController()
 	comments.RegisterRoutes(publicCommentsPath, adminCommentsPath)
 
-	publicFilesPath := router.Group("/public/files")
+	publicArticlePath := router.Group("/articles")
 
-	adminFilesPath := router.Group("/admin/files")
-	adminFilesPath.Use(auth.SessionsHandler())
-	adminFilesPath.Use(auth.AuthMiddleware())
+	adminArticlePath := router.Group("/admin/articles")
+	adminArticlePath.Use(auth.SessionsHandler())
+	adminArticlePath.Use(auth.AuthMiddleware())
 
-	files := controllers.NewFilesController()
-	files.RegisterRoutes(publicFilesPath, adminFilesPath)
+	article := controllers.NewArticleController(files.GetDeleteHandler(), comments.GetDeleteHandler())
+	article.RegisterRoutes(publicArticlePath, adminArticlePath)
+
+	publicEditionPath := router.Group("/editions")
+
+	adminEditionPath := router.Group("/admin/editions")
+	adminEditionPath.Use(auth.SessionsHandler())
+	adminEditionPath.Use(auth.AuthMiddleware())
+
+	edition := controllers.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
+	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
 
 	log.Fatal(router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }

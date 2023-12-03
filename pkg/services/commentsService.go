@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"urfu-radio-journal/internal/models"
 	"urfu-radio-journal/pkg/db"
 
@@ -40,27 +41,47 @@ func (this *CommentsService) GetAll(onlyApproved bool) (comments []models.Commen
 	return
 }
 
-func (this *CommentsService) Update(data []models.CommentUpdate) error {
-	var filter, update bson.M
-	for _, comment := range data {
-		filter = bson.M{"_id": comment.Id}
-		update = bson.M{"$set": comment}
-		if _, err := this.storage.UpdateOne(this.ctx, filter, update); err != nil {
-			return err
-		}
+func (this *CommentsService) Update(comment models.CommentUpdate) error {
+	filter := bson.M{"_id": comment.Id}
+	update := bson.M{"$set": comment}
+	res, err := this.storage.UpdateOne(this.ctx, filter, update)
+	if res.MatchedCount == 0 {
+		return errors.New("Document not found.")
 	}
-	return nil
-}
-
-func (this *CommentsService) Delete(data []primitive.ObjectID) error {
-	filter := bson.M{"_id": bson.M{"$in": data}}
-	_, err := this.storage.DeleteMany(this.ctx, filter)
 	return err
 }
 
-func (this *CommentsService) Approve(data []primitive.ObjectID) error {
-	filter := bson.M{"_id": bson.M{"$in": data}}
-	update := bson.M{"$set": bson.M{"isApproved": true}}
-	_, err := this.storage.UpdateMany(this.ctx, filter, update)
+func (this *CommentsService) Delete(id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+	res, err := this.storage.DeleteMany(this.ctx, filter)
+	if res.DeletedCount == 0 {
+		return errors.New("Documents not found.")
+	}
+	return err
+}
+
+func (this *CommentsService) DeleteHandler(data []primitive.ObjectID) error {
+	filter := bson.M{"articleId": bson.M{"$in": data}}
+	res, err := this.storage.DeleteMany(this.ctx, filter)
+	if res.DeletedCount == 0 {
+		return errors.New("Documents not found.")
+	}
+	return err
+}
+
+func (this *CommentsService) Approve(commentApprove models.CommentApprove) error {
+	filter := bson.M{"_id": commentApprove.Id}
+	update := bson.M{"$set": bson.M{
+		"isApproved": true,
+		"content": bson.M{
+			"$set": bson.M{
+				"Eng": commentApprove.ContentEng,
+			},
+		},
+	}}
+	res, err := this.storage.UpdateOne(this.ctx, filter, update)
+	if res.MatchedCount == 0 {
+		return errors.New("Document not found.")
+	}
 	return err
 }
