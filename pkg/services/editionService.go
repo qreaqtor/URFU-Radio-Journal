@@ -22,9 +22,10 @@ func NewEditionService() *EditionService {
 	}
 }
 
-func (this *EditionService) Create(edition models.EditionCreate) error {
-	_, err := this.storage.InsertOne(this.ctx, edition)
-	return err
+func (this *EditionService) Create(edition models.EditionCreate) (id primitive.ObjectID, err error) {
+	res, err := this.storage.InsertOne(this.ctx, edition)
+	id = res.InsertedID.(primitive.ObjectID)
+	return
 }
 
 func (this *EditionService) GetAll() (editions []models.EditionRead, err error) {

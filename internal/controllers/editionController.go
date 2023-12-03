@@ -29,12 +29,15 @@ func (this *EditionController) createEdition(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err := this.editions.Create(edition)
+	id, err := this.editions.Create(edition)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"id":      id,
+	})
 }
 
 func (this *EditionController) getAllEditions(ctx *gin.Context) {
