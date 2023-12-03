@@ -25,7 +25,7 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 		return
 	}
 	filePathId := ctx.Query("filePathId")
-	url, path, err := this.filePaths.GetFileURL(file.Filename, resourceType, filePathId)
+	id, path, err := this.filePaths.GetFileURL(file.Filename, resourceType, filePathId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -37,7 +37,7 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "success",
-		"url":     url,
+		"id":      id,
 	})
 }
 
@@ -52,10 +52,9 @@ func (this *FilePathsController) downloadFile(ctx *gin.Context) {
 }
 
 func (this *FilePathsController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
-	publicRg.Use(this.resourceTypeMiddleware())
+	adminRg.Use(this.resourceTypeMiddleware())
 
-	publicRg.GET("/editions/download/:filePathId", this.downloadFile)
-	publicRg.GET("/articles/download/:filePathId", this.downloadFile)
+	publicRg.GET("/download/:filePathId", this.downloadFile)
 
 	adminRg.POST("/editions/upload", this.uploadFile)
 	adminRg.POST("/articles/upload", this.uploadFile)

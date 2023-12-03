@@ -39,19 +39,33 @@ func (this *ArticleService) GetAll() (articles []models.ArticleRead, err error) 
 	return
 }
 
-func (this *ArticleService) GetArticlesFilePathsByEditionId(editionId primitive.ObjectID) (filePathsId []primitive.ObjectID, err error) {
-	filter := bson.M{"editionid": editionId}
+func (this *ArticleService) GetIdsByEditionId(editionId primitive.ObjectID) (articlesId, filePathsId []primitive.ObjectID, err error) {
+	articlesId = make([]primitive.ObjectID, 0)
+	filePathsId = make([]primitive.ObjectID, 0)
+	filter := bson.M{"editionId": editionId}
 	cur, err := this.storage.Find(this.ctx, filter)
 	if err != nil {
 		return
 	}
 	var res []models.ArticleRead
-	if err = cur.All(this.ctx, res); err != nil {
+	if err = cur.All(this.ctx, &res); err != nil {
 		return
 	}
 	for _, v := range res {
+		articlesId = append(articlesId, v.Id)
 		filePathsId = append(filePathsId, v.FilePathId)
 	}
+	return
+}
+
+func (this *ArticleService) GetFilePathId(id primitive.ObjectID) (filePathId primitive.ObjectID, err error) {
+	filter := bson.M{"_id": id}
+	var article models.ArticleRead
+	err = this.storage.FindOne(this.ctx, filter).Decode(&article)
+	if err != nil {
+		return
+	}
+	filePathId = article.FilePathId
 	return
 }
 

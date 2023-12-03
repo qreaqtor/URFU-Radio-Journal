@@ -53,31 +53,27 @@ func (this *CommentsService) Update(comment models.CommentUpdate) error {
 
 func (this *CommentsService) Delete(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	res, err := this.storage.DeleteMany(this.ctx, filter)
+	res, err := this.storage.DeleteOne(this.ctx, filter)
 	if res.DeletedCount == 0 {
-		return errors.New("Documents not found.")
+		return errors.New("Document not found.")
 	}
 	return err
 }
 
 func (this *CommentsService) DeleteHandler(data []primitive.ObjectID) error {
 	filter := bson.M{"articleId": bson.M{"$in": data}}
-	res, err := this.storage.DeleteMany(this.ctx, filter)
-	if res.DeletedCount == 0 {
-		return errors.New("Documents not found.")
-	}
+	_, err := this.storage.DeleteMany(this.ctx, filter)
+	// if res.DeletedCount == 0 {
+	// 	return errors.New("Documents not found.")
+	// }
 	return err
 }
 
 func (this *CommentsService) Approve(commentApprove models.CommentApprove) error {
 	filter := bson.M{"_id": commentApprove.Id}
 	update := bson.M{"$set": bson.M{
-		"isApproved": true,
-		"content": bson.M{
-			"$set": bson.M{
-				"Eng": commentApprove.ContentEng,
-			},
-		},
+		"isApproved":  true,
+		"content.Eng": commentApprove.ContentEng,
 	}}
 	res, err := this.storage.UpdateOne(this.ctx, filter, update)
 	if res.MatchedCount == 0 {

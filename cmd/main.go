@@ -16,7 +16,7 @@ func main() {
 	auth := controllers.NewAuthController()
 	auth.RegisterRoutes(authPath)
 
-	publicFilesPath := router.Group("/public/files")
+	publicFilesPath := router.Group("/files")
 
 	adminFilesPath := router.Group("/admin/files")
 	adminFilesPath.Use(auth.SessionsHandler())

@@ -76,7 +76,12 @@ func (this *ArticleController) delete(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.deleteContent([]primitive.ObjectID{articleId}); err != nil {
+	filePathId, err := this.articles.GetFilePathId(articleId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	if err := this.deleteContent([]primitive.ObjectID{articleId}, []primitive.ObjectID{filePathId}); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -87,12 +92,11 @@ func (this *ArticleController) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *ArticleController) deleteContent(articlesId []primitive.ObjectID) error {
+func (this *ArticleController) deleteContent(articlesId, filePathsId []primitive.ObjectID) error {
 	if err := this.deleteComments(articlesId); err != nil {
 		return err
 	}
-	data := make([]primitive.ObjectID, 0)
-	if err := this.deleteFile(data); err != nil {
+	if err := this.deleteFile(filePathsId); err != nil {
 		return err
 	}
 	return nil
@@ -108,11 +112,11 @@ func (this *ArticleController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg
 
 func (this *ArticleController) GetDeleteHandler() func(primitive.ObjectID) error {
 	return func(editionId primitive.ObjectID) error {
-		filePathsId, err := this.articles.GetArticlesFilePathsByEditionId(editionId)
+		articlesId, filePathsId, err := this.articles.GetIdsByEditionId(editionId)
 		if err != nil {
 			return err
 		}
-		if err := this.deleteContent(filePathsId); err != nil {
+		if err := this.deleteContent(articlesId, filePathsId); err != nil {
 			return err
 		}
 		if err := this.articles.DeleteMany(editionId); err != nil {
