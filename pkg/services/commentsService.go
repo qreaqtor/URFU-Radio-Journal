@@ -53,19 +53,13 @@ func (this *CommentsService) Update(comment models.CommentUpdate) error {
 
 func (this *CommentsService) Delete(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	res, err := this.storage.DeleteOne(this.ctx, filter)
-	if res.DeletedCount == 0 {
-		return errors.New("Document not found.")
-	}
+	_, err := this.storage.DeleteOne(this.ctx, filter)
 	return err
 }
 
-func (this *CommentsService) DeleteHandler(data []primitive.ObjectID) error {
-	filter := bson.M{"articleId": bson.M{"$in": data}}
+func (this *CommentsService) DeleteManyHandler(filter primitive.M) error {
+	//filter := bson.M{"articleId": bson.M{"$in": data}}
 	_, err := this.storage.DeleteMany(this.ctx, filter)
-	// if res.DeletedCount == 0 {
-	// 	return errors.New("Documents not found.")
-	// }
 	return err
 }
 

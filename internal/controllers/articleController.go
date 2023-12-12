@@ -6,19 +6,20 @@ import (
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ArticleController struct {
 	articles       *services.ArticleService
-	deleteFile     func([]primitive.ObjectID) error
-	deleteComments func([]primitive.ObjectID) error
+	deleteFiles    func(filter primitive.M) error
+	deleteComments func(filter primitive.M) error
 }
 
-func NewArticleController(deleteFileHandler func([]primitive.ObjectID) error, deleteCommentsHandler func([]primitive.ObjectID) error) *ArticleController {
+func NewArticleController(deleteFileHandler func(filter primitive.M) error, deleteCommentsHandler func(filter primitive.M) error) *ArticleController {
 	return &ArticleController{
 		articles:       services.NewArticleService(),
-		deleteFile:     deleteFileHandler,
+		deleteFiles:    deleteFileHandler,
 		deleteComments: deleteCommentsHandler,
 	}
 }
@@ -63,13 +64,6 @@ func (this *ArticleController) update(ctx *gin.Context) {
 }
 
 func (this *ArticleController) delete(ctx *gin.Context) {
-	// var input struct {
-	// 	Data []primitive.ObjectID `json:"data" binding:"required"`
-	// }
-	// if err := ctx.ShouldBindJSON(&input); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
 	articleIdStr := ctx.Param("id")
 	articleId, err := primitive.ObjectIDFromHex(articleIdStr)
 	if err != nil {
@@ -81,7 +75,9 @@ func (this *ArticleController) delete(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.deleteContent([]primitive.ObjectID{articleId}, []primitive.ObjectID{filePathId}); err != nil {
+	articlesFilter := bson.M{"articleId": articleId}
+	filePathsFilter := bson.M{"_id": filePathId}
+	if err := this.deleteContent(articlesFilter, filePathsFilter); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -92,11 +88,12 @@ func (this *ArticleController) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *ArticleController) deleteContent(articlesId, filePathsId []primitive.ObjectID) error {
-	if err := this.deleteComments(articlesId); err != nil {
+func (this *ArticleController) deleteContent(articlesFilter, filePathsFilter primitive.M) error {
+	if err := this.deleteComments(articlesFilter); err != nil {
 		return err
 	}
-	if err := this.deleteFile(filePathsId); err != nil {
+	//filePathsFilter := bson.M{"_id": bson.M{"$in": filePathsId}}
+	if err := this.deleteFiles(filePathsFilter); err != nil {
 		return err
 	}
 	return nil
@@ -113,13 +110,15 @@ func (this *ArticleController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg
 func (this *ArticleController) GetDeleteHandler() func(primitive.ObjectID) error {
 	return func(editionId primitive.ObjectID) error {
 		articlesId, filePathsId, err := this.articles.GetIdsByEditionId(editionId)
+		articlesFilter := bson.M{"articleId": bson.M{"$in": articlesId}}
+		filePathsFilter := bson.M{"_id": bson.M{"$in": filePathsId}}
 		if err != nil {
 			return err
 		}
-		if err := this.deleteContent(articlesId, filePathsId); err != nil {
+		if err := this.deleteContent(articlesFilter, filePathsFilter); err != nil {
 			return err
 		}
-		if err := this.articles.DeleteMany(editionId); err != nil {
+		if err := this.articles.DeleteManyHandler(editionId); err != nil {
 			return err
 		}
 		return nil

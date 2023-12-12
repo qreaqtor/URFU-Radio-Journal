@@ -64,17 +64,12 @@ func (this *FilePathsController) resourceTypeMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		reqPath := ctx.Request.URL.Path
 		pathParts := strings.Split(reqPath, "/")
-		if pathParts[3] != "editions" && pathParts[3] != "articles" {
-			ctx.JSON(http.StatusBadGateway, gin.H{"message": "Wrong gateway."})
-			ctx.Abort()
-			return
-		}
 		ctx.Set("resourceType", pathParts[3])
 		ctx.Next()
 		return
 	}
 }
 
-func (this *FilePathsController) GetDeleteHandler() func([]primitive.ObjectID) error {
-	return this.filePaths.DeleteHandler
+func (this *FilePathsController) GetDeleteHandler() func(filter primitive.M) error {
+	return this.filePaths.DeleteManyHandler
 }

@@ -81,18 +81,12 @@ func (this *ArticleService) Update(newArticle models.ArticleUpdate) error {
 
 func (this *ArticleService) Delete(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	res, err := this.storage.DeleteOne(this.ctx, filter)
-	if res.DeletedCount == 0 {
-		return errors.New("Document not found.")
-	}
+	_, err := this.storage.DeleteOne(this.ctx, filter)
 	return err
 }
 
-func (this *ArticleService) DeleteMany(editionId primitive.ObjectID) error {
+func (this *ArticleService) DeleteManyHandler(editionId primitive.ObjectID) error {
 	filter := bson.M{"editionId": editionId}
-	res, err := this.storage.DeleteMany(this.ctx, filter)
-	if res.DeletedCount == 0 {
-		return errors.New("Documents not found.")
-	}
+	_, err := this.storage.DeleteMany(this.ctx, filter)
 	return err
 }

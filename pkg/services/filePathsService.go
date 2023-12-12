@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type FilePathsService struct {
@@ -30,7 +31,7 @@ func NewFilesService() *FilePathsService {
 }
 
 func getDirs() map[string]string {
-	dirs := make(map[string]string, 3)
+	dirs := make(map[string]string, 4)
 	dirs[".pdf"] = "documents"
 	dirs[".png"] = "images"
 	dirs[".mkv"] = "videos"
@@ -73,12 +74,12 @@ func (this *FilePathsService) GetFileURL(filename, resourceType, filePathIdStr s
 	return
 }
 
-func (this *FilePathsService) DeleteHandler(data []primitive.ObjectID) error {
+func (this *FilePathsService) DeleteManyHandler(filter primitive.M) error {
 	var filePaths []struct {
 		Id   primitive.ObjectID
 		Path string
 	}
-	filter := bson.M{"_id": bson.M{"$in": data}}
+	//filter := bson.M{"_id": bson.M{"$in": data}}
 	cur, err := this.storage.Find(*this.ctx, filter)
 	if err := cur.All(*this.ctx, &filePaths); err != nil {
 		return err
@@ -89,27 +90,25 @@ func (this *FilePathsService) DeleteHandler(data []primitive.ObjectID) error {
 			return err
 		}
 	}
-	res, err := this.storage.DeleteMany(*this.ctx, filter)
-	if res.DeletedCount == 0 {
-		return errors.New("Document not found.")
-	}
+	_, err = this.storage.DeleteMany(*this.ctx, filter)
 	return err
 }
 
 func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
 	var filePath struct {
-		Id   primitive.ObjectID
 		Path string
 	}
 	filter := bson.M{"_id": filepathId}
-	if err := this.storage.FindOne(*this.ctx, filter).Decode(&filePath); err != nil {
-		return err
-	}
-	if err := os.Remove(filePath.Path); err != nil {
-		return err
-	}
 	update := bson.M{"$set": bson.M{"path": path}}
-	_, err := this.storage.UpdateOne(*this.ctx, filter, update)
+	returnDoc := options.Before
+	options := options.FindOneAndUpdateOptions{
+		ReturnDocument: &returnDoc,
+	}
+	err := this.storage.FindOneAndUpdate(*this.ctx, filter, update, &options).Decode(&filePath)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(filePath.Path)
 	return err
 }
 

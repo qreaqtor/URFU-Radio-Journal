@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"urfu-radio-journal/internal/models"
 	"urfu-radio-journal/pkg/db"
 
@@ -51,7 +52,10 @@ func (this *EditionService) Get(id string) (edition models.EditionRead, err erro
 func (this *EditionService) Update(newEdition models.EditionUpdate) error {
 	filter := bson.M{"_id": newEdition.Id}
 	update := bson.M{"$set": newEdition}
-	_, err := this.storage.UpdateOne(this.ctx, filter, update)
+	res, err := this.storage.UpdateOne(this.ctx, filter, update)
+	if res.MatchedCount == 0 {
+		return errors.New("Document not found.")
+	}
 	return err
 }
 

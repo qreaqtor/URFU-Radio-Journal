@@ -98,6 +98,6 @@ func (this *CommentsController) RegisterRoutes(publicRg *gin.RouterGroup, adminR
 	adminRg.DELETE("/delete/:id", this.delete)
 }
 
-func (this *CommentsController) GetDeleteHandler() func([]primitive.ObjectID) error {
-	return this.comments.DeleteHandler
+func (this *CommentsController) GetDeleteHandler() func(filter primitive.M) error {
+	return this.comments.DeleteManyHandler
 }

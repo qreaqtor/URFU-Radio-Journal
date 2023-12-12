@@ -6,16 +6,17 @@ import (
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type EditionController struct {
 	editions       *services.EditionService
-	deleteFiles    func([]primitive.ObjectID) error
+	deleteFiles    func(filter primitive.M) error
 	deleteArticles func(primitive.ObjectID) error
 }
 
-func NewEditionController(deleteFilesHandler func([]primitive.ObjectID) error, deleteArticlesHandler func(primitive.ObjectID) error) *EditionController {
+func NewEditionController(deleteFilesHandler func(filter primitive.M) error, deleteArticlesHandler func(primitive.ObjectID) error) *EditionController {
 	return &EditionController{
 		editions:       services.NewEditionService(),
 		deleteFiles:    deleteFilesHandler,
@@ -86,7 +87,8 @@ func (this *EditionController) deleteContent(edition models.EditionRead) error {
 		return err
 	}
 	toDelete := []primitive.ObjectID{edition.CoverPathId, edition.VideoPathId, edition.FilePathId}
-	err := this.deleteFiles(toDelete)
+	filter := bson.M{"_id": bson.M{"$in": toDelete}}
+	err := this.deleteFiles(filter)
 	return err
 }
 

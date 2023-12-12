@@ -12,7 +12,6 @@ type EditionCreate struct {
 	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
 	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"-"`
 	Date        time.Time          `json:"date" bson:"date" binding:"required"`
-	// Articles    []primitive.ObjectID `json:"articles" bson:"articles" binding:"required"`
 }
 
 type EditionRead struct {
@@ -22,7 +21,6 @@ type EditionRead struct {
 	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
 	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"required"`
 	Date        time.Time          `json:"date" bson:"date" binding:"required"`
-	// Articles    []primitive.ObjectID `json:"articles" bson:"articles" binding:"required"`
 }
 
 type EditionUpdate struct {
@@ -31,5 +29,4 @@ type EditionUpdate struct {
 	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
 	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId,omitempty" binding:"-"`
 	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId,omitempty" binding:"-"`
-	// Articles    []primitive.ObjectID `json:"articles" bson:"articles,omitempty" binding:"-"`
 }
