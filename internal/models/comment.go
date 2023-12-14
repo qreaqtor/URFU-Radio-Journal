@@ -10,7 +10,7 @@ type CommentCreate struct {
 	ArticleId  primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
 	Content    textCommentCreate  `json:"content" bson:"content" binding:"required"`
 	Date       time.Time          `json:"date" bson:"date" binding:"required"`
-	IsApproved bool               `bson:"isApproved"`
+	IsApproved bool               `json:"-" bson:"isApproved"`
 }
 
 type CommentRead struct {
