@@ -7,5 +7,5 @@ type text struct {
 
 type textCommentCreate struct {
 	Ru  string `json:"Ru" bson:"Ru" binding:"required"`
-	Eng string `bson:"Eng" binding:"-"`
+	Eng string `json:"-" bson:"Eng" binding:"-"`
 }
