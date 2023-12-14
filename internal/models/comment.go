@@ -7,10 +7,12 @@ import (
 )
 
 type CommentCreate struct {
-	ArticleId  primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
-	Content    textCommentCreate  `json:"content" bson:"content" binding:"required"`
-	Date       time.Time          `json:"date" bson:"date" binding:"required"`
-	IsApproved bool               `json:"-" bson:"isApproved"`
+	ArticleId primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
+	// Content    textCommentCreate  `json:"content" bson:"content" binding:"required"`
+	ContentPart string    `json:"content" bson:"-" binding:"required"`
+	Content     text      `json:"-" bson:"content" binding:"-"`
+	Date        time.Time `json:"date" bson:"date" binding:"required"`
+	IsApproved  bool      `json:"-" bson:"isApproved"`
 }
 
 type CommentRead struct {
@@ -27,6 +29,6 @@ type CommentUpdate struct {
 }
 
 type CommentApprove struct {
-	Id         primitive.ObjectID `json:"id" binding:"required"`
-	ContentEng string             `json:"contentEng" binding:"required"`
+	Id          primitive.ObjectID `json:"id" binding:"required"`
+	ContentPart string             `json:"content" binding:"required"`
 }
