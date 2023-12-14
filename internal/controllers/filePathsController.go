@@ -74,23 +74,24 @@ func (this *FilePathsController) getRequirements(ctx *gin.Context) {
 }
 
 func (this *FilePathsController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
-	adminRg.Use(this.resourceTypeMiddleware())
+	uplpoadGroup := adminRg.Group("/upload")
+	uplpoadGroup.Use(this.resourceTypeMiddleware())
+
+	uplpoadGroup.POST("/editions", this.uploadFile)
+	uplpoadGroup.POST("/articles", this.uploadFile)
+	uplpoadGroup.POST("/requirements", this.uploadFile)
 
 	publicRg.GET("/download/:filePathId", this.downloadFile)
 	publicRg.GET("/get/requirements", this.getRequirements)
 
-	adminRg.POST("/editions/upload", this.uploadFile)
-	adminRg.POST("/articles/upload", this.uploadFile)
-	adminRg.POST("/requirements/upload", this.uploadFile)
-
-	adminRg.POST("/delete/:filePathId", this.delete)
+	adminRg.DELETE("/delete/:filePathId", this.delete)
 }
 
 func (this *FilePathsController) resourceTypeMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		reqPath := ctx.Request.URL.Path
 		pathParts := strings.Split(reqPath, "/")
-		ctx.Set("resourceType", pathParts[3])
+		ctx.Set("resourceType", pathParts[len(pathParts)-1])
 		ctx.Next()
 		return
 	}
