@@ -54,7 +54,7 @@ func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, 
 	return
 }
 
-func (this *FilePathsService) GetFileURL(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
+func (this *FilePathsService) GetFilePathInfo(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
 	if path, err = this.generateFilePath(filename, resourceType); err != nil {
 		return
 	}
@@ -66,7 +66,11 @@ func (this *FilePathsService) GetFileURL(filename, resourceType, filePathIdStr s
 		err = this.updateFilePath(path, filePathId)
 		return
 	}
-	res, err := this.storage.InsertOne(*this.ctx, bson.M{"path": path})
+	file := bson.M{
+		"path":         path,
+		"resourceType": resourceType,
+	}
+	res, err := this.storage.InsertOne(*this.ctx, file)
 	if err != nil {
 		return
 	}
@@ -74,12 +78,48 @@ func (this *FilePathsService) GetFileURL(filename, resourceType, filePathIdStr s
 	return
 }
 
+func (this *FilePathsService) GetRequirementsFiles() (files map[string]primitive.ObjectID, err error) {
+	var filePaths []struct {
+		Id   primitive.ObjectID `bson:"_id"`
+		Path string             `bson:"path"`
+	}
+	filter := bson.M{"resourceType": "requirements"}
+	cur, err := this.storage.Find(*this.ctx, filter)
+	err = cur.All(*this.ctx, &filePaths)
+	if err != nil {
+		return
+	}
+	files = make(map[string]primitive.ObjectID, len(filePaths))
+	for _, v := range filePaths {
+		fileName := filepath.Base(v.Path)
+		files[fileName] = v.Id
+	}
+	return
+}
+
+func (this *FilePathsService) DeleteOne(idStr string) error {
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return err
+	}
+	var filePath struct {
+		Id   primitive.ObjectID
+		Path string
+	}
+	filter := bson.M{"_id": id}
+	err = this.storage.FindOneAndDelete(*this.ctx, filter).Decode(&filePath)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(filePath.Path)
+	return err
+}
+
 func (this *FilePathsService) DeleteManyHandler(filter primitive.M) error {
 	var filePaths []struct {
 		Id   primitive.ObjectID
 		Path string
 	}
-	//filter := bson.M{"_id": bson.M{"$in": data}}
 	cur, err := this.storage.Find(*this.ctx, filter)
 	if err := cur.All(*this.ctx, &filePaths); err != nil {
 		return err
