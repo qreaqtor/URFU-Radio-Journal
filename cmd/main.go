@@ -52,5 +52,14 @@ func main() {
 	edition := controllers.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
 	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
 
+	councilPublicPath := router.Group("/council/members")
+
+	councilAdminPath := router.Group("/admin/council/members")
+	councilAdminPath.Use(auth.SessionsHandler())
+	councilAdminPath.Use(auth.AuthMiddleware())
+
+	council := controllers.NewCouncilController(files.GetDeleteHandler())
+	council.RegisterRoutes(councilPublicPath, councilAdminPath)
+
 	log.Fatal(router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }

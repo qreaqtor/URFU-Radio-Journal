@@ -92,14 +92,13 @@ func (this *ArticleController) deleteContent(articlesFilter, filePathsFilter pri
 	if err := this.deleteComments(articlesFilter); err != nil {
 		return err
 	}
-	//filePathsFilter := bson.M{"_id": bson.M{"$in": filePathsId}}
 	if err := this.deleteFiles(filePathsFilter); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *ArticleController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+func (this *ArticleController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAllArticles)
 
 	adminRg.POST("/create", this.create)

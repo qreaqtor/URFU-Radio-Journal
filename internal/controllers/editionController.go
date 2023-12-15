@@ -92,7 +92,7 @@ func (this *EditionController) deleteContent(edition models.EditionRead) error {
 	return err
 }
 
-func (this *EditionController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+func (this *EditionController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAllEditions)
 
 	adminRg.POST("/create", this.createEdition)

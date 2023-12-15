@@ -54,16 +54,8 @@ func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, 
 	return
 }
 
-func (this *FilePathsService) GetFilePathInfo(filename, resourceType, filePathIdStr string) (filePathId primitive.ObjectID, path string, err error) {
-	if path, err = this.generateFilePath(filename, resourceType); err != nil {
-		return
-	}
-	if filePathIdStr != "" {
-		filePathId, err = primitive.ObjectIDFromHex(filePathIdStr)
-		if err != nil {
-			return
-		}
-		err = this.updateFilePath(path, filePathId)
+func (this *FilePathsService) GetFilePathInfo(filename, resourceType string) (filePathId primitive.ObjectID, path string, err error) {
+	if path, err = this.generateFilePath(filename); err != nil {
 		return
 	}
 	file := bson.M{
@@ -134,9 +126,22 @@ func (this *FilePathsService) DeleteManyHandler(filter primitive.M) error {
 	return err
 }
 
+func (this *FilePathsService) UpdateFile(filename, filePathIdStr string) (path string, err error) {
+	path, err = this.generateFilePath(filename)
+	if err != nil {
+		return
+	}
+	filePathId, err := primitive.ObjectIDFromHex(filePathIdStr)
+	if err != nil {
+		return
+	}
+	err = this.updateFilePath(path, filePathId)
+	return
+}
+
 func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
 	var filePath struct {
-		Path string
+		Path string `bson:"path"`
 	}
 	filter := bson.M{"_id": filepathId}
 	update := bson.M{"$set": bson.M{"path": path}}
@@ -152,10 +157,10 @@ func (this *FilePathsService) updateFilePath(path string, filepathId primitive.O
 	return err
 }
 
-func (this *FilePathsService) generateFilePath(filename, resourceType string) (path string, err error) {
+func (this *FilePathsService) generateFilePath(filename string) (path string, err error) {
 	ext := filepath.Ext(filename)
 	if dir, ok := this.directories[ext]; ok {
-		path = fmt.Sprintf("%s/%s/%s/%s", this.basePath, resourceType, dir, filename)
+		path = fmt.Sprintf("%s/%s/%s", this.basePath, dir, filename)
 		return
 	}
 	err = errors.New("This file extension is not supported.")

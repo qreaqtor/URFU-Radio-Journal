@@ -89,7 +89,7 @@ func (this *CommentsController) approve(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *CommentsController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+func (this *CommentsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAll)
 	publicRg.POST("/create", this.create)
 

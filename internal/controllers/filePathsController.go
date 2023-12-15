@@ -24,8 +24,7 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	filePathId := ctx.Query("filePathId")
-	id, path, err := this.filePaths.GetFilePathInfo(file.Filename, resourceType, filePathId)
+	id, path, err := this.filePaths.GetFilePathInfo(file.Filename, resourceType)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -39,6 +38,26 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 		"message": "success",
 		"id":      id,
 	})
+}
+
+func (this *FilePathsController) updateFile(ctx *gin.Context) {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	filePathId := ctx.Param("filePathId")
+	path, err := this.filePaths.UpdateFile(file.Filename, filePathId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	err = ctx.SaveUploadedFile(file, path)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
 func (this *FilePathsController) downloadFile(ctx *gin.Context) {
@@ -73,7 +92,7 @@ func (this *FilePathsController) getRequirements(ctx *gin.Context) {
 	})
 }
 
-func (this *FilePathsController) RegisterRoutes(publicRg *gin.RouterGroup, adminRg *gin.RouterGroup) {
+func (this *FilePathsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	uplpoadGroup := adminRg.Group("/upload")
 	uplpoadGroup.Use(this.resourceTypeMiddleware())
 
@@ -85,6 +104,7 @@ func (this *FilePathsController) RegisterRoutes(publicRg *gin.RouterGroup, admin
 	publicRg.GET("/get/requirements", this.getRequirements)
 
 	adminRg.DELETE("/delete/:filePathId", this.delete)
+	adminRg.PUT("/update/:filePathId", this.updateFile)
 }
 
 func (this *FilePathsController) resourceTypeMiddleware() gin.HandlerFunc {
