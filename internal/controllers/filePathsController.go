@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"strings"
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +13,17 @@ type FilePathsController struct {
 }
 
 func NewFilesController() *FilePathsController {
-	return &FilePathsController{filePaths: services.NewFilesService()}
+	return &FilePathsController{
+		filePaths: services.NewFilesService(),
+	}
 }
 
 func (this *FilePathsController) uploadFile(ctx *gin.Context) {
-	resourceType := ctx.MustGet("resourceType").(string)
+	err, resourceType := this.filePaths.CheckResourceType(ctx.Param("resourceType"))
+	if err != nil {
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
+		return
+	}
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -93,28 +98,12 @@ func (this *FilePathsController) getRequirements(ctx *gin.Context) {
 }
 
 func (this *FilePathsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	uplpoadGroup := adminRg.Group("/upload")
-	uplpoadGroup.Use(this.resourceTypeMiddleware())
-
-	uplpoadGroup.POST("/editions", this.uploadFile)
-	uplpoadGroup.POST("/articles", this.uploadFile)
-	uplpoadGroup.POST("/requirements", this.uploadFile)
-
 	publicRg.GET("/download/:filePathId", this.downloadFile)
 	publicRg.GET("/get/requirements", this.getRequirements)
 
 	adminRg.DELETE("/delete/:filePathId", this.delete)
 	adminRg.PUT("/update/:filePathId", this.updateFile)
-}
-
-func (this *FilePathsController) resourceTypeMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		reqPath := ctx.Request.URL.Path
-		pathParts := strings.Split(reqPath, "/")
-		ctx.Set("resourceType", pathParts[len(pathParts)-1])
-		ctx.Next()
-		return
-	}
+	adminRg.POST("/upload/:resourceType", this.uploadFile)
 }
 
 func (this *FilePathsController) GetDeleteHandler() func(filter primitive.M) error {

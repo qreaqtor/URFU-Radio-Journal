@@ -15,18 +15,20 @@ import (
 )
 
 type FilePathsService struct {
-	ctx         *context.Context
-	storage     *mongo.Collection
-	basePath    string
-	directories map[string]string
+	ctx           *context.Context
+	storage       *mongo.Collection
+	basePath      string
+	directories   map[string]string
+	resourceTypes [4]string
 }
 
 func NewFilesService() *FilePathsService {
 	return &FilePathsService{
-		ctx:         db.GetContext(),
-		storage:     db.GetStorage("filePaths"),
-		basePath:    "../attachments",
-		directories: getDirs(),
+		ctx:           db.GetContext(),
+		storage:       db.GetStorage("filePaths"),
+		basePath:      "../attachments",
+		directories:   getDirs(),
+		resourceTypes: getResourceTypes(),
 	}
 }
 
@@ -37,6 +39,11 @@ func getDirs() map[string]string {
 	dirs[".mkv"] = "videos"
 	dirs[".mp4"] = "videos"
 	return dirs
+}
+
+func getResourceTypes() [4]string {
+	resourceTypes := [4]string{"requirements", "editions", "articles", "avatars"}
+	return resourceTypes
 }
 
 func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, err error) {
@@ -137,6 +144,16 @@ func (this *FilePathsService) UpdateFile(filename, filePathIdStr string) (path s
 	}
 	err = this.updateFilePath(path, filePathId)
 	return
+}
+
+func (this *FilePathsService) CheckResourceType(resourceType string) (error, string) {
+	for _, v := range this.resourceTypes {
+		if resourceType == v {
+			return nil, resourceType
+		}
+	}
+	err := fmt.Errorf("Incorrect resource type: %s", resourceType)
+	return err, ""
 }
 
 func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
