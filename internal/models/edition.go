@@ -7,26 +7,26 @@ import (
 )
 
 type EditionCreate struct {
-	Title     string    `json:"title" bson:"title" binding:"required"`
-	FileName  string    `json:"fileName" bson:"fileName" binding:"required"`
-	CoverName string    `json:"coverName" bson:"coverName" binding:"required"`
-	Date      time.Time `json:"date" bson:"date" binding:"required"`
-	Articles  []Article `json:"articles" bson:"articles" binding:"required,dive"`
+	Title       text               `json:"title" bson:"title" binding:"required,dive"`
+	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
+	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
+	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"-"`
+	Date        time.Time          `json:"date" bson:"date" binding:"required"`
 }
 
 type EditionRead struct {
-	Id        primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
-	Title     string             `json:"title" bson:"title" binding:"required"`
-	FileName  string             `json:"fileName" bson:"fileName" binding:"required"`
-	CoverName string             `json:"coverName" bson:"coverName" binding:"required"`
-	Date      time.Time          `json:"date" bson:"date" binding:"required"`
-	Articles  []Article          `json:"articles" bson:"articles" binding:"required"`
+	Id          primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
+	Title       text               `json:"title" bson:"title" binding:"required,dive"`
+	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
+	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
+	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"required"`
+	Date        time.Time          `json:"date" bson:"date" binding:"required"`
 }
 
 type EditionUpdate struct {
-	Id        primitive.ObjectID `json:"id" binding:"required"`
-	Title     string             `json:"title" bson:"title,omitempty" binding:"-"`
-	FileName  string             `json:"fileName" bson:"fileName,omitempty" binding:"-"`
-	CoverName string             `json:"coverName" bson:"coverName,omitempty" binding:"-"`
-	Articles  []Article          `json:"articles" bson:"articles,omitempty" binding:"dive"`
+	Id          primitive.ObjectID `json:"id" binding:"required"`
+	Title       text               `json:"title" bson:"title,omitempty" binding:"dive"`
+	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
+	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId,omitempty" binding:"-"`
+	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId,omitempty" binding:"-"`
 }

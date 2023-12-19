@@ -16,14 +16,14 @@ func main() {
 	auth := controllers.NewAuthController()
 	auth.RegisterRoutes(authPath)
 
-	publicEditionPath := router.Group("/editions")
+	publicFilesPath := router.Group("/files")
 
-	adminEditionPath := router.Group("/admin/editions")
-	adminEditionPath.Use(auth.SessionsHandler())
-	adminEditionPath.Use(auth.AuthMiddleware())
+	adminFilesPath := router.Group("/admin/files")
+	adminFilesPath.Use(auth.SessionsHandler())
+	adminFilesPath.Use(auth.AuthMiddleware())
 
-	edition := controllers.NewEditionController()
-	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
+	files := controllers.NewFilesController()
+	files.RegisterRoutes(publicFilesPath, adminFilesPath)
 
 	publicCommentsPath := router.Group("/comments")
 
@@ -33,6 +33,33 @@ func main() {
 
 	comments := controllers.NewCommentsController()
 	comments.RegisterRoutes(publicCommentsPath, adminCommentsPath)
+
+	publicArticlePath := router.Group("/articles")
+
+	adminArticlePath := router.Group("/admin/articles")
+	adminArticlePath.Use(auth.SessionsHandler())
+	adminArticlePath.Use(auth.AuthMiddleware())
+
+	article := controllers.NewArticleController(files.GetDeleteHandler(), comments.GetDeleteHandler())
+	article.RegisterRoutes(publicArticlePath, adminArticlePath)
+
+	publicEditionPath := router.Group("/editions")
+
+	adminEditionPath := router.Group("/admin/editions")
+	adminEditionPath.Use(auth.SessionsHandler())
+	adminEditionPath.Use(auth.AuthMiddleware())
+
+	edition := controllers.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
+	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
+
+	councilPublicPath := router.Group("/council/members")
+
+	councilAdminPath := router.Group("/admin/council/members")
+	councilAdminPath.Use(auth.SessionsHandler())
+	councilAdminPath.Use(auth.AuthMiddleware())
+
+	council := controllers.NewCouncilController(files.GetDeleteHandler())
+	council.RegisterRoutes(councilPublicPath, councilAdminPath)
 
 	log.Fatal(router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }

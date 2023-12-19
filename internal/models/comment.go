@@ -7,21 +7,28 @@ import (
 )
 
 type CommentCreate struct {
-	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
-	Content    string             `json:"content" bson:"content" binding:"required"`
-	Date       time.Time          `json:"date" bson:"date" binding:"required"`
-	IsApproved bool               `bson:"isApproved"`
+	ArticleId primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
+	// Content    textCommentCreate  `json:"content" bson:"content" binding:"required"`
+	ContentPart string    `json:"content" bson:"-" binding:"required"`
+	Content     text      `json:"-" bson:"content" binding:"-"`
+	Date        time.Time `json:"date" bson:"date" binding:"required"`
+	IsApproved  bool      `json:"-" bson:"isApproved"`
 }
 
 type CommentRead struct {
 	Id         primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
-	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
-	Content    string             `json:"content" bson:"content" binding:"required"`
+	ArticleId  primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
+	Content    text               `json:"content" bson:"content" binding:"required,dive"`
 	Date       time.Time          `json:"date" bson:"date" binding:"required"`
 	IsApproved bool               `json:"isApproved" bson:"isApproved" binding:"required"`
 }
 
 type CommentUpdate struct {
 	Id      primitive.ObjectID `json:"id" bson:"-" binding:"required"`
-	Content string             `json:"content" bson:"content" binding:"required"`
+	Content text               `json:"content" bson:"content" binding:"required,dive"`
+}
+
+type CommentApprove struct {
+	Id          primitive.ObjectID `json:"id" binding:"required"`
+	ContentPart string             `json:"content" binding:"required"`
 }

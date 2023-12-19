@@ -1,15 +1,34 @@
 package models
 
-import (
-	"time"
-)
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type Article struct {
-	Title      string    `json:"title" bson:"title" binding:"required"`
-	Authors    []string  `json:"authors" bson:"authors" binding:"required"`
-	Content    string    `json:"annotation" bson:"annotation" binding:"required"`
-	Keywords   []string  `json:"keywords" bson:"keywords" binding:"required"`
-	FileName   string    `json:"fileName" bson:"fileName" binding:"required"`
-	Literature []string  `json:"literature" bson:"literature" binding:"required"`
-	Date       time.Time `json:"date" bson:"date" binding:"required"`
+type ArticleCreate struct {
+	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
+	Title      text               `json:"title" bson:"title" binding:"required,dive"`
+	Authors    []string           `json:"authors" bson:"authors" binding:"required"`
+	Content    text               `json:"content" bson:"content" binding:"required,dive"`
+	Keywords   []text             `json:"keywords" bson:"keywords" binding:"required,dive"`
+	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
+	Literature []string           `json:"literature" bson:"literature" binding:"required"`
+}
+
+type ArticleRead struct {
+	Id         primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
+	EditionId  primitive.ObjectID `json:"editionId" bson:"editionId" binding:"required"`
+	Title      text               `json:"title" bson:"title" binding:"required,dive"`
+	Authors    []string           `json:"authors" bson:"authors" binding:"required"`
+	Content    text               `json:"content" bson:"content" binding:"required,dive"`
+	Keywords   []text             `json:"keywords" bson:"keywords" binding:"required,dive"`
+	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
+	Literature []string           `json:"literature" bson:"literature" binding:"required"`
+}
+
+type ArticleUpdate struct {
+	Id         primitive.ObjectID `json:"id" binding:"required"`
+	Title      text               `json:"title" bson:"title,omitempty" binding:"dive"`
+	Authors    []string           `json:"authors" bson:"authors,omitempty" binding:"-"`
+	Content    text               `json:"content" bson:"content,omitempty" binding:"dive"`
+	Keywords   []text             `json:"keywords" bson:"keywords,omitempty" binding:"dive"`
+	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
+	Literature []string           `json:"literature" bson:"literature,omitempty" binding:"-"`
 }
