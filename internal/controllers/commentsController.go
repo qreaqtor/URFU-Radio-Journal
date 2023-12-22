@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"strconv"
 	"urfu-radio-journal/internal/models"
 	"urfu-radio-journal/pkg/services"
 
@@ -32,14 +31,10 @@ func (this *CommentsController) create(ctx *gin.Context) {
 }
 
 func (this *CommentsController) getAll(ctx *gin.Context) {
+	onlyApproved := true
 	onlyApprovedStr := ctx.Query("onlyApproved")
-	if onlyApprovedStr == "" {
-		onlyApprovedStr = "false"
-	}
-	onlyApproved, err := strconv.ParseBool(onlyApprovedStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
+	if onlyApprovedStr == "false" {
+		onlyApproved = false
 	}
 	comments, err := this.comments.GetAll(onlyApproved)
 	if err != nil {

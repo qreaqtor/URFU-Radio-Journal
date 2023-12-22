@@ -50,9 +50,7 @@ func (this *CommentsService) determineLanguage(str string) (unicodeRange *unicod
 			return nil, fmt.Errorf("The string contains an unsupported character: \"%s\".", string(r))
 		}
 	}
-	if ruCount != 0 && engCount != 0 {
-		return nil, errors.New("The string must contain only Cyrillic or Latin characters.")
-	} else if ruCount != 0 {
+	if ruCount > engCount {
 		unicodeRange = unicode.Cyrillic
 	} else {
 		unicodeRange = unicode.Latin
@@ -90,7 +88,6 @@ func (this *CommentsService) Delete(id primitive.ObjectID) error {
 }
 
 func (this *CommentsService) DeleteManyHandler(filter primitive.M) error {
-	//filter := bson.M{"articleId": bson.M{"$in": data}}
 	_, err := this.storage.DeleteMany(this.ctx, filter)
 	return err
 }
@@ -115,7 +112,7 @@ func (this *CommentsService) Approve(commentApprove models.CommentApprove) error
 	}}
 	res, err := this.storage.UpdateOne(this.ctx, filter, update)
 	if res.MatchedCount == 0 {
-		return errors.New("Document not found.")
+		return errors.New("Document not found. Check field content.")
 	}
 	return err
 }
