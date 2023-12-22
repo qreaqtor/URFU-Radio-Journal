@@ -35,7 +35,7 @@ func NewFilesService() *FilePathsService {
 func getDirs() map[string]string {
 	dirs := make(map[string]string, 4)
 	dirs[".pdf"] = "documents"
-	dirs[".png"] = "images"
+	dirs[".jpeg"] = "images"
 	dirs[".mkv"] = "videos"
 	dirs[".mp4"] = "videos"
 	return dirs

@@ -68,13 +68,16 @@ func (this *FilePathsController) updateFile(ctx *gin.Context) {
 }
 
 func (this *FilePathsController) getFile(ctx *gin.Context) {
-	download, err := strconv.ParseBool(ctx.Query("download"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
-	if download {
-		ctx.Header("Content-Disposition", "attachment")
+	downloadStr := ctx.Query("download")
+	if downloadStr != "" {
+		download, err := strconv.ParseBool(downloadStr)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+		if download {
+			ctx.Header("Content-Disposition", "attachment")
+		}
 	}
 	filePathId := ctx.Param("filePathId")
 	path, err := this.filePaths.CheckFilePath(filePathId)
