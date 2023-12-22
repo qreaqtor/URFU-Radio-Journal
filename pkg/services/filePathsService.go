@@ -146,14 +146,13 @@ func (this *FilePathsService) UpdateFile(filename, filePathIdStr string) (path s
 	return
 }
 
-func (this *FilePathsService) CheckResourceType(resourceType string) (error, string) {
+func (this *FilePathsService) CheckResourceType(resourceType string) error {
 	for _, v := range this.resourceTypes {
 		if resourceType == v {
-			return nil, resourceType
+			return nil
 		}
 	}
-	err := fmt.Errorf("Incorrect resource type: %s", resourceType)
-	return err, ""
+	return fmt.Errorf("Incorrect resource type: %s", resourceType)
 }
 
 func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {

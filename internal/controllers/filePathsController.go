@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 	"urfu-radio-journal/pkg/services"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,8 @@ func NewFilesController() *FilePathsController {
 }
 
 func (this *FilePathsController) uploadFile(ctx *gin.Context) {
-	err, resourceType := this.filePaths.CheckResourceType(ctx.Param("resourceType"))
+	resourceType := ctx.Param("resourceType")
+	err := this.filePaths.CheckResourceType(resourceType)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
 		return
@@ -65,14 +67,22 @@ func (this *FilePathsController) updateFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *FilePathsController) downloadFile(ctx *gin.Context) {
-	filePathId := ctx.Param("filePathId")
-	path, err := this.filePaths.CheckFilePath(filePathId)
-	if err == nil {
-		ctx.File(path)
+func (this *FilePathsController) getFile(ctx *gin.Context) {
+	download, err := strconv.ParseBool(ctx.Query("download"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+	if download {
+		ctx.Header("Content-Disposition", "attachment")
+	}
+	filePathId := ctx.Param("filePathId")
+	path, err := this.filePaths.CheckFilePath(filePathId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.File(path)
 }
 
 func (this *FilePathsController) delete(ctx *gin.Context) {
@@ -98,7 +108,7 @@ func (this *FilePathsController) getRequirements(ctx *gin.Context) {
 }
 
 func (this *FilePathsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/download/:filePathId", this.downloadFile)
+	publicRg.GET("/get/:filePathId", this.getFile)
 	publicRg.GET("/get/requirements", this.getRequirements)
 
 	adminRg.DELETE("/delete/:filePathId", this.delete)
