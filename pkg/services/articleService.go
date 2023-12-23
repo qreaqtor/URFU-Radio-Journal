@@ -29,8 +29,21 @@ func (this *ArticleService) Create(article models.ArticleCreate) (id primitive.O
 	return
 }
 
-func (this *ArticleService) GetAll() (articles []models.ArticleRead, err error) {
+func (this *ArticleService) GetAll() ([]models.ArticleRead, error) {
 	filter := bson.M{}
+	return this.getByFilter(filter)
+}
+
+func (this *ArticleService) GetAllByEditionId(editionIdStr string) ([]models.ArticleRead, error) {
+	editionId, err := primitive.ObjectIDFromHex(editionIdStr)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{"editionId": editionId}
+	return this.getByFilter(filter)
+}
+
+func (this *ArticleService) getByFilter(filter primitive.M) (articles []models.ArticleRead, err error) {
 	cur, err := this.storage.Find(this.ctx, filter)
 	if err != nil {
 		return
