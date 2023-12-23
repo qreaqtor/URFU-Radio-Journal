@@ -36,7 +36,8 @@ func (this *CommentsController) getAll(ctx *gin.Context) {
 	if onlyApprovedStr == "false" {
 		onlyApproved = false
 	}
-	comments, err := this.comments.GetAll(onlyApproved)
+	articleId := ctx.Query("articleId")
+	comments, err := this.comments.GetAll(onlyApproved, articleId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

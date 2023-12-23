@@ -58,10 +58,18 @@ func (this *CommentsService) determineLanguage(str string) (unicodeRange *unicod
 	return unicodeRange, err
 }
 
-func (this *CommentsService) GetAll(onlyApproved bool) (comments []models.CommentRead, err error) {
+func (this *CommentsService) GetAll(onlyApproved bool, articleIdStr string) (comments []models.CommentRead, err error) {
 	filter := bson.M{}
 	if onlyApproved {
 		filter = bson.M{"isApproved": true}
+	}
+	if articleIdStr != "" {
+		var articleId primitive.ObjectID
+		articleId, err = primitive.ObjectIDFromHex(articleIdStr)
+		if err != nil {
+			return
+		}
+		filter["articleId"] = articleId
 	}
 	cur, err := this.storage.Find(this.ctx, filter)
 	if err != nil {
