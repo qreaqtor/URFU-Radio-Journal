@@ -51,6 +51,19 @@ func (this *ArticleController) getAllArticles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": result})
 }
 
+func (this *ArticleController) getArticleById(ctx *gin.Context) {
+	articleId := ctx.Param("articleId")
+	article, err := this.articles.Get(articleId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"article": article,
+		"message": "success",
+	})
+}
+
 func (this *ArticleController) update(ctx *gin.Context) {
 	var article models.ArticleUpdate
 	if err := ctx.ShouldBindJSON(&article); err != nil {
@@ -101,6 +114,7 @@ func (this *ArticleController) deleteContent(articlesFilter, filePathsFilter pri
 
 func (this *ArticleController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAllArticles)
+	publicRg.GET("/get/:articleId", this.getArticleById)
 
 	adminRg.POST("/create", this.create)
 	adminRg.PUT("/update", this.update)

@@ -47,6 +47,16 @@ func (this *ArticleService) GetAll(editionIdStr string) (articles []models.Artic
 	return
 }
 
+func (this *ArticleService) Get(articleIdStr string) (article models.ArticleRead, err error) {
+	articleId, err := primitive.ObjectIDFromHex(articleIdStr)
+	if err != nil {
+		return
+	}
+	filter := bson.M{"_id": articleId}
+	err = this.storage.FindOne(this.ctx, filter).Decode(&article)
+	return
+}
+
 func (this *ArticleService) GetIdsByEditionId(editionId primitive.ObjectID) (articlesId, filePathsId []primitive.ObjectID, err error) {
 	articlesId = make([]primitive.ObjectID, 0)
 	filePathsId = make([]primitive.ObjectID, 0)

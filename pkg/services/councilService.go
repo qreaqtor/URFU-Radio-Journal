@@ -65,3 +65,13 @@ func (this *CouncilService) GetAll() (members []models.CouncilMemberRead, err er
 	err = cur.All(this.ctx, &members)
 	return
 }
+
+func (this *CouncilService) Get(memberIdStr string) (member models.CouncilMemberRead, err error) {
+	memberId, err := primitive.ObjectIDFromHex(memberIdStr)
+	if err != nil {
+		return
+	}
+	filter := bson.M{"_id": memberId}
+	err = this.storage.FindOne(this.ctx, filter).Decode(&member)
+	return
+}

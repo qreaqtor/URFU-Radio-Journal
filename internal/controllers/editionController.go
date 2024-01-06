@@ -47,7 +47,23 @@ func (this *EditionController) getAllEditions(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": res})
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":    res,
+		"message": "success",
+	})
+}
+
+func (this *EditionController) getEditionById(ctx *gin.Context) {
+	editionId := ctx.Param("editionId")
+	edition, err := this.editions.Get(editionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"edition": edition,
+		"message": "success",
+	})
 }
 
 func (this *EditionController) updateEdition(ctx *gin.Context) {
@@ -94,6 +110,7 @@ func (this *EditionController) deleteContent(edition models.EditionRead) error {
 
 func (this *EditionController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAllEditions)
+	publicRg.GET("/get/:editionId", this.getEditionById)
 
 	adminRg.POST("/create", this.createEdition)
 	adminRg.PUT("/update", this.updateEdition)

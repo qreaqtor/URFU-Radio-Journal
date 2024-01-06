@@ -55,7 +55,23 @@ func (this *CouncilController) getAll(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": data})
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":    data,
+		"message": "success",
+	})
+}
+
+func (this *CouncilController) getMemberById(ctx *gin.Context) {
+	memberId := ctx.Param("memberId")
+	member, err := this.members.Get(memberId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"member":  member,
+		"message": "success",
+	})
 }
 
 func (this *CouncilController) delete(ctx *gin.Context) {
@@ -84,6 +100,7 @@ func (this *CouncilController) delete(ctx *gin.Context) {
 
 func (this *CouncilController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
 	publicRg.GET("/get/all", this.getAll)
+	publicRg.GET("/get/:memberId", this.getMemberById)
 
 	adminRg.POST("/create", this.create)
 	adminRg.PUT("/update/:id", this.update)
