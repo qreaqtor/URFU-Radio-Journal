@@ -6,11 +6,13 @@ import (
 	"os"
 	"urfu-radio-journal/internal/controllers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	authPath := router.Group("/admin/auth")
 	auth := controllers.NewAuthController()
