@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,7 +19,10 @@ type AuthService struct {
 func NewAuthService() *AuthService {
 	secret := os.Getenv("SECRET")
 	secureStr := os.Getenv("SECURE_HTTPS")
-	secure, _ := strconv.ParseBool(secureStr)
+	secure, err := strconv.ParseBool(secureStr)
+	if err != nil {
+		log.Fatalf("Can't parse secure parametr: %s", err.Error())
+	}
 	cookieMaxAge, _ := strconv.Atoi(os.Getenv("COOKIE_MAX_AGE"))
 	store := cookie.NewStore([]byte(secret))
 	store.Options(sessions.Options{
