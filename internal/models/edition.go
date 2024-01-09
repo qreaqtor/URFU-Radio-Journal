@@ -7,7 +7,7 @@ import (
 )
 
 type EditionCreate struct {
-	Title       text               `json:"title" bson:"title" binding:"required,dive"`
+	Title       text               `json:"title" bson:"title" binding:"required"`
 	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
 	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
 	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"-"`

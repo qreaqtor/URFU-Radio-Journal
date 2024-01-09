@@ -17,14 +17,14 @@ type CommentCreate struct {
 type CommentRead struct {
 	Id         primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
 	ArticleId  primitive.ObjectID `json:"articleId" bson:"articleId" binding:"required"`
-	Content    text               `json:"content" bson:"content" binding:"required,dive"`
+	Content    text               `json:"content" bson:"content" binding:"required"`
 	Date       time.Time          `json:"date" bson:"date" binding:"required"`
 	IsApproved bool               `json:"isApproved" bson:"isApproved" binding:"required"`
 }
 
 type CommentUpdate struct {
 	Id      primitive.ObjectID `json:"id" bson:"-" binding:"required"`
-	Content text               `json:"content" bson:"content" binding:"required,dive"`
+	Content text               `json:"content" bson:"content" binding:"required"`
 }
 
 type CommentApprove struct {
