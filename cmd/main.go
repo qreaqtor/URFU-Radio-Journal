@@ -12,7 +12,10 @@ import (
 
 func main() {
 	router := gin.Default()
-	router.Use(cors.Default())
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	router.Use(cors.New(config))
 
 	authPath := router.Group("/admin/auth")
 	auth := controllers.NewAuthController()
@@ -63,5 +66,6 @@ func main() {
 	council := controllers.NewCouncilController(files.GetDeleteHandler())
 	council.RegisterRoutes(councilPublicPath, councilAdminPath)
 
-	log.Fatal(router.Run(fmt.Sprintf(":%s", os.Getenv("PORT"))))
+	port := os.Getenv("PORT")
+	log.Fatal(router.Run(fmt.Sprintf(":%s", port)))
 }
