@@ -23,12 +23,17 @@ func NewAuthService(domain string) *AuthService {
 	if err != nil {
 		log.Fatalf("Can't parse secure parametr: %s", err.Error())
 	}
+	httpOnlyStr := os.Getenv("HTTP_ONLY")
+	httpOnly, err := strconv.ParseBool(httpOnlyStr)
+	if err != nil {
+		log.Fatalf("Can't parse httpOnly parametr: %s", err.Error())
+	}
 	cookieMaxAge, _ := strconv.Atoi(os.Getenv("COOKIE_MAX_AGE"))
 	store := cookie.NewStore([]byte(secret))
 	store.Options(sessions.Options{
 		MaxAge:   cookieMaxAge, // seconds
 		Path:     "/",
-		HttpOnly: true,
+		HttpOnly: httpOnly,
 		Secure:   secure, // only for HTTPS
 		SameSite: http.SameSiteNoneMode,
 		Domain:   domain,
