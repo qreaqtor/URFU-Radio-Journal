@@ -19,6 +19,8 @@ func main() {
 	config.AllowOrigins = []string{frontend}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
+	config.AddAllowHeaders("Authorization", "Cookie")
+
 	router.Use(cors.New(config))
 
 	authPath := router.Group("/admin/auth")
