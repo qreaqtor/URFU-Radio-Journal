@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"net/http"
 	"os"
 	"strconv"
 	"urfu-radio-journal/internal/models"
@@ -16,13 +17,16 @@ type AuthService struct {
 
 func NewAuthService() *AuthService {
 	secret := os.Getenv("SECRET")
+	secureStr := os.Getenv("SECURE_HTTPS")
+	secure, _ := strconv.ParseBool(secureStr)
 	cookieMaxAge, _ := strconv.Atoi(os.Getenv("COOKIE_MAX_AGE"))
 	store := cookie.NewStore([]byte(secret))
 	store.Options(sessions.Options{
 		MaxAge:   cookieMaxAge, // seconds
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // only for HTTPS
+		Secure:   secure, // only for HTTPS
+		SameSite: http.SameSiteNoneMode,
 	})
 
 	return &AuthService{store: store}
