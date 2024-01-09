@@ -19,6 +19,7 @@ type AuthService struct {
 func NewAuthService() *AuthService {
 	secret := os.Getenv("SECRET")
 	secureStr := os.Getenv("SECURE_HTTPS")
+	domain := os.Getenv("FRONTEND_DOMAIN")
 	secure, err := strconv.ParseBool(secureStr)
 	if err != nil {
 		log.Fatalf("Can't parse secure parametr: %s", err.Error())
@@ -31,6 +32,7 @@ func NewAuthService() *AuthService {
 		HttpOnly: true,
 		Secure:   secure, // only for HTTPS
 		SameSite: http.SameSiteNoneMode,
+		Domain:   domain,
 	})
 
 	return &AuthService{store: store}
