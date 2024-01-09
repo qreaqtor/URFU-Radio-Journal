@@ -16,10 +16,9 @@ type AuthService struct {
 	store cookie.Store
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(domain string) *AuthService {
 	secret := os.Getenv("SECRET")
 	secureStr := os.Getenv("SECURE_HTTPS")
-	domain := os.Getenv("FRONTEND_DOMAIN")
 	secure, err := strconv.ParseBool(secureStr)
 	if err != nil {
 		log.Fatalf("Can't parse secure parametr: %s", err.Error())
@@ -52,7 +51,7 @@ func (this *AuthService) Login(admin models.Admin, session sessions.Session) err
 		}
 		return nil
 	}
-	return errors.New("Unathorized")
+	return errors.New("Check login or password.")
 }
 
 func (this *AuthService) Logout(session sessions.Session) error {
@@ -63,7 +62,7 @@ func (this *AuthService) Logout(session sessions.Session) error {
 		}
 		return nil
 	}
-	return errors.New("Unathorized")
+	return errors.New("Unathorized. Missing cookie.")
 }
 
 func (this *AuthService) GetStore() cookie.Store {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"urfu-radio-journal/internal/models"
 	"urfu-radio-journal/pkg/services"
 
@@ -15,8 +16,9 @@ type AuthController struct {
 	auth *services.AuthService
 }
 
-func NewAuthController() *AuthController {
-	return &AuthController{auth: services.NewAuthService()}
+func NewAuthController(frontendAdress string) *AuthController {
+	frontendDomain := strings.Split(frontendAdress, ":")[1][2:]
+	return &AuthController{auth: services.NewAuthService(frontendDomain)}
 }
 
 func (this *AuthController) login(ctx *gin.Context) {

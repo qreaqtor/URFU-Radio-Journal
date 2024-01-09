@@ -12,13 +12,16 @@ import (
 
 func main() {
 	router := gin.Default()
+
+	frontend := os.Getenv("FRONTEND_ADRESS")
+
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"*"}
+	config.AllowOrigins = []string{frontend}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	router.Use(cors.New(config))
 
 	authPath := router.Group("/admin/auth")
-	auth := controllers.NewAuthController()
+	auth := controllers.NewAuthController(frontend)
 	auth.RegisterRoutes(authPath)
 
 	publicFilesPath := router.Group("/files")
