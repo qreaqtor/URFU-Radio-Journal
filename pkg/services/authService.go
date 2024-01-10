@@ -35,11 +35,25 @@ func NewAuthService(domain string) *AuthService {
 		Path:     "/",
 		HttpOnly: httpOnly,
 		Secure:   secure, // only for HTTPS
-		SameSite: http.SameSiteNoneMode,
+		SameSite: parseSameSite(),
 		Domain:   domain,
 	})
 
 	return &AuthService{store: store}
+}
+
+func parseSameSite() http.SameSite {
+	sameSite := os.Getenv("SameSite")
+	switch sameSite {
+	case "lax":
+		return http.SameSiteLaxMode
+	case "strict":
+		return http.SameSiteStrictMode
+	case "none":
+		return http.SameSiteNoneMode
+	default:
+		return http.SameSiteDefaultMode
+	}
 }
 
 func checkAdmin(admin models.Admin) bool {
