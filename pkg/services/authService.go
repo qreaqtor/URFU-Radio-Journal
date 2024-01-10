@@ -36,7 +36,7 @@ func NewAuthService(domain string) *AuthService {
 		HttpOnly: httpOnly,
 		Secure:   secure, // only for HTTPS
 		SameSite: http.SameSiteLaxMode,
-		Domain:   "127.0.0.1",
+		Domain:   "127.0.0.1:5173",
 	})
 
 	return &AuthService{store: store}
