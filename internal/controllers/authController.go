@@ -8,7 +8,6 @@ import (
 	"urfu-radio-journal/internal/models"
 	"urfu-radio-journal/pkg/services"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,39 +15,39 @@ type AuthController struct {
 	auth *services.AuthService
 }
 
-func NewAuthController(frontendAdress string) *AuthController {
-	frontendDomain := strings.Split(frontendAdress, ":")[1][2:]
-	return &AuthController{auth: services.NewAuthService(frontendDomain)}
+func NewAuthController() *AuthController {
+	return &AuthController{auth: services.NewAuthService()}
 }
 
 func (this *AuthController) login(ctx *gin.Context) {
-	session := sessions.Default(ctx)
 	var admin models.Admin
 	if err := ctx.ShouldBindJSON(&admin); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.auth.Login(admin, session); err != nil {
+	token, err := this.auth.Login(admin)
+	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"Token":   token,
+	})
 }
 
-func (this *AuthController) logout(ctx *gin.Context) {
-	session := sessions.Default(ctx)
-	if err := this.auth.Logout(session); err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
-}
+// func (this *AuthController) logout(ctx *gin.Context) {
+// 	session := sessions.Default(ctx)
+// 	if err := this.auth.Logout(session); err != nil {
+// 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+// }
 
 func (this *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.Use(sessions.Sessions("admin", this.auth.GetStore()))
-
 	rg.POST("/login", this.login)
-	rg.GET("/logout", this.logout)
+	// rg.GET("/logout", this.logout)
 }
 
 func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
@@ -63,9 +62,10 @@ func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
 			}
 		}()
 
-		session := sessions.Default(ctx)
-		if admin := session.Get("admin"); admin == nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		token := extractToken(ctx)
+		err := this.auth.ValidateToken(token)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("can't extract token: %s", err.Error())})
 			ctx.Abort()
 			return
 		}
@@ -73,6 +73,10 @@ func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func (this *AuthController) SessionsHandler() gin.HandlerFunc {
-	return sessions.Sessions("admin", this.auth.GetStore())
+func extractToken(ctx *gin.Context) string {
+	bearerToken := ctx.Request.Header.Get("Authorization")
+	if len(strings.Split(bearerToken, " ")) == 2 {
+		return strings.Split(bearerToken, " ")[1]
+	}
+	return ""
 }

@@ -3,87 +3,84 @@ package services
 import (
 	"errors"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
+	"time"
 	"urfu-radio-journal/internal/models"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/golang-jwt/jwt"
 )
 
 type AuthService struct {
-	store cookie.Store
+	admin         models.Admin
+	tokenLifetime time.Duration
+	secret        []byte
 }
 
-func NewAuthService(domain string) *AuthService {
-	secret := os.Getenv("SECRET")
-	secureStr := os.Getenv("SECURE_HTTPS")
-	secure, err := strconv.ParseBool(secureStr)
-	if err != nil {
-		log.Fatalf("Can't parse secure parametr: %s", err.Error())
-	}
-	httpOnlyStr := os.Getenv("HTTP_ONLY")
-	httpOnly, err := strconv.ParseBool(httpOnlyStr)
-	if err != nil {
-		log.Fatalf("Can't parse httpOnly parametr: %s", err.Error())
-	}
-	cookieMaxAge, _ := strconv.Atoi(os.Getenv("COOKIE_MAX_AGE"))
-	store := cookie.NewStore([]byte(secret))
-	store.Options(sessions.Options{
-		MaxAge:   cookieMaxAge, // seconds
-		Path:     "/",
-		HttpOnly: httpOnly,
-		Secure:   secure, // only for HTTPS
-		SameSite: parseSameSite(),
-		Domain:   domain,
-	})
-
-	return &AuthService{store: store}
-}
-
-func parseSameSite() http.SameSite {
-	sameSite := os.Getenv("SameSite")
-	switch sameSite {
-	case "lax":
-		return http.SameSiteLaxMode
-	case "strict":
-		return http.SameSiteStrictMode
-	case "none":
-		return http.SameSiteNoneMode
-	default:
-		return http.SameSiteDefaultMode
-	}
-}
-
-func checkAdmin(admin models.Admin) bool {
+func NewAuthService() *AuthService {
 	password := os.Getenv("ADMIN_PASSWORD")
+	if password == "" {
+		log.Fatal("Missing admin password in environvent variables.")
+	}
 	username := os.Getenv("ADMIN_USERNAME")
-	return admin.Username == username && admin.Password == password
-}
-
-func (this *AuthService) Login(admin models.Admin, session sessions.Session) error {
-	if checkAdmin(admin) {
-		session.Set("admin", admin.Username)
-		if err := session.Save(); err != nil {
-			return err
-		}
-		return nil
+	if username == "" {
+		log.Fatal("Missing admin username in environvent variables.")
 	}
-	return errors.New("Check login or password.")
-}
-
-func (this *AuthService) Logout(session sessions.Session) error {
-	if admin := session.Get("admin"); admin != nil {
-		session.Delete("admin")
-		if err := session.Save(); err != nil {
-			return err
-		}
-		return nil
+	tokenLifetime, err := strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
+	if err != nil {
+		log.Fatal("Can't parse token lifetime.")
 	}
-	return errors.New("Unathorized. Missing cookie.")
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		log.Fatal("Missing secret in environvent variables.")
+	}
+	return &AuthService{
+		admin: models.Admin{
+			Password: password,
+			Username: username,
+		},
+		tokenLifetime: time.Duration(tokenLifetime),
+		secret:        []byte(secret),
+	}
 }
 
-func (this *AuthService) GetStore() cookie.Store {
-	return this.store
+func (this *AuthService) checkAdmin(admin models.Admin) bool {
+	return admin.Username == this.admin.Username && admin.Password == this.admin.Password
+}
+
+func (this *AuthService) Login(admin models.Admin) (token string, err error) {
+	if this.checkAdmin(admin) {
+		token, err = this.CreateToken(admin)
+		return
+	}
+	err = errors.New("Check login or password.")
+	return
+}
+
+func (this *AuthService) CreateToken(admin models.Admin) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": admin.Username,
+		"exp":      time.Now().Add(time.Hour * this.tokenLifetime).Unix(), // Время жизни токена
+	})
+	tokenString, err := token.SignedString(this.secret)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (this *AuthService) ValidateToken(tokenString string) error {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return this.secret, nil
+	})
+	if err != nil {
+		return err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if _, exists := claims["username"].(string); exists {
+			return nil
+		}
+	}
+	return errors.New("Invalid token")
 }
