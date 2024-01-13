@@ -10,6 +10,7 @@ type ArticleCreate struct {
 	Keywords   []text             `json:"keywords" bson:"keywords" binding:"required"`
 	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
 	Literature []string           `json:"literature" bson:"literature" binding:"required"`
+	Reference  text               `json:"reference" bson:"reference" binding:"required"`
 }
 
 type ArticleRead struct {
@@ -21,6 +22,7 @@ type ArticleRead struct {
 	Keywords   []text             `json:"keywords" bson:"keywords" binding:"required"`
 	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
 	Literature []string           `json:"literature" bson:"literature" binding:"required"`
+	Reference  text               `json:"reference" bson:"reference" binding:"required"`
 }
 
 type ArticleUpdate struct {
@@ -31,4 +33,5 @@ type ArticleUpdate struct {
 	Keywords   []text             `json:"keywords" bson:"keywords,omitempty" binding:"-"`
 	FilePathId primitive.ObjectID `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
 	Literature []string           `json:"literature" bson:"literature,omitempty" binding:"-"`
+	Reference  text               `json:"reference" bson:"reference,omitempty" binding:"-"`
 }

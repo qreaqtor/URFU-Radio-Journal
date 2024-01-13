@@ -24,13 +24,12 @@ func main() {
 	router.Use(cors.New(config))
 
 	authPath := router.Group("/admin/auth")
-	auth := controllers.NewAuthController(frontend)
+	auth := controllers.NewAuthController()
 	auth.RegisterRoutes(authPath)
 
 	publicFilesPath := router.Group("/files")
 
 	adminFilesPath := router.Group("/admin/files")
-	adminFilesPath.Use(auth.SessionsHandler())
 	adminFilesPath.Use(auth.AuthMiddleware())
 
 	files := controllers.NewFilesController()
@@ -39,7 +38,6 @@ func main() {
 	publicCommentsPath := router.Group("/comments")
 
 	adminCommentsPath := router.Group("/admin/comments")
-	adminCommentsPath.Use(auth.SessionsHandler())
 	adminCommentsPath.Use(auth.AuthMiddleware())
 
 	comments := controllers.NewCommentsController()
@@ -48,7 +46,6 @@ func main() {
 	publicArticlePath := router.Group("/articles")
 
 	adminArticlePath := router.Group("/admin/articles")
-	adminArticlePath.Use(auth.SessionsHandler())
 	adminArticlePath.Use(auth.AuthMiddleware())
 
 	article := controllers.NewArticleController(files.GetDeleteHandler(), comments.GetDeleteHandler())
@@ -57,7 +54,6 @@ func main() {
 	publicEditionPath := router.Group("/editions")
 
 	adminEditionPath := router.Group("/admin/editions")
-	adminEditionPath.Use(auth.SessionsHandler())
 	adminEditionPath.Use(auth.AuthMiddleware())
 
 	edition := controllers.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
@@ -66,7 +62,6 @@ func main() {
 	councilPublicPath := router.Group("/council/members")
 
 	councilAdminPath := router.Group("/admin/council/members")
-	councilAdminPath.Use(auth.SessionsHandler())
 	councilAdminPath.Use(auth.AuthMiddleware())
 
 	council := controllers.NewCouncilController(files.GetDeleteHandler())
