@@ -10,6 +10,7 @@ type CouncilMemberCreate struct {
 	Description text               `json:"description" bson:"description" binding:"required"`
 	Content     text               `json:"content" bson:"content" binding:"required"`
 	Rank        string             `json:"rank" bson:"rank" binding:"required"`
+	Location    text               `json:"location" bson:"location" binding:"required"`
 }
 
 type CouncilMemberRead struct {
@@ -21,6 +22,7 @@ type CouncilMemberRead struct {
 	Description text               `json:"description" bson:"description" binding:"required"`
 	Content     text               `json:"content" bson:"content" binding:"required"`
 	Rank        string             `json:"rank" bson:"rank" binding:"required"`
+	Location    text               `json:"location" bson:"location" binding:"required"`
 }
 
 type CouncilMemberUpdate struct {
@@ -31,4 +33,5 @@ type CouncilMemberUpdate struct {
 	Description text               `json:"description" bson:"description,omitempty" binding:"-"`
 	Content     text               `json:"content" bson:"content,omitempty" binding:"-"`
 	Rank        string             `json:"rank" bson:"rank,omitempty" binding:"-"`
+	Location    text               `json:"location" bson:"location,omitempty" binding:"-"`
 }
