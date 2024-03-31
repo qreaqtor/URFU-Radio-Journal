@@ -1,4 +1,4 @@
-package controllers
+package auth
 
 import (
 	"fmt"
@@ -6,26 +6,26 @@ import (
 	"runtime/debug"
 	"strings"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/pkg/services"
+	"urfu-radio-journal/pkg/services/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	auth *services.AuthService
+	auth *auth.AuthService
 }
 
 func NewAuthController() *AuthController {
-	return &AuthController{auth: services.NewAuthService()}
+	return &AuthController{auth: auth.NewAuthService()}
 }
 
-func (this *AuthController) login(ctx *gin.Context) {
+func (a *AuthController) login(ctx *gin.Context) {
 	var admin models.Admin
 	if err := ctx.ShouldBindJSON(&admin); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	token, err := this.auth.Login(admin)
+	token, err := a.auth.Login(admin)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
@@ -45,12 +45,12 @@ func (this *AuthController) login(ctx *gin.Context) {
 // 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 // }
 
-func (this *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.POST("/login", this.login)
+func (a *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
+	rg.POST("/login", a.login)
 	// rg.GET("/logout", this.logout)
 }
 
-func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
+func (a *AuthController) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -63,7 +63,7 @@ func (this *AuthController) AuthMiddleware() gin.HandlerFunc {
 		}()
 
 		token := extractToken(ctx)
-		err := this.auth.ValidateToken(token)
+		err := a.auth.ValidateToken(token)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("can't extract token: %s", err.Error())})
 			ctx.Abort()

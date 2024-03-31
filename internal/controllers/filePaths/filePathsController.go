@@ -1,27 +1,27 @@
-package controllers
+package filePaths
 
 import (
 	"net/http"
 	"strconv"
-	"urfu-radio-journal/pkg/services"
+	"urfu-radio-journal/pkg/services/filePaths"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type FilePathsController struct {
-	filePaths *services.FilePathsService
+	filePaths *filePaths.FilePathsService
 }
 
 func NewFilesController() *FilePathsController {
 	return &FilePathsController{
-		filePaths: services.NewFilesService(),
+		filePaths: filePaths.NewFilesService(),
 	}
 }
 
-func (this *FilePathsController) uploadFile(ctx *gin.Context) {
+func (fp *FilePathsController) uploadFile(ctx *gin.Context) {
 	resourceType := ctx.Param("resourceType")
-	err := this.filePaths.CheckResourceType(resourceType)
+	err := fp.filePaths.CheckResourceType(resourceType)
 	if err != nil {
 		ctx.JSON(http.StatusBadGateway, gin.H{"message": err.Error()})
 		return
@@ -31,7 +31,7 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	id, path, err := this.filePaths.GetFilePathInfo(file.Filename, resourceType)
+	id, path, err := fp.filePaths.GetFilePathInfo(file.Filename, resourceType)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -47,14 +47,14 @@ func (this *FilePathsController) uploadFile(ctx *gin.Context) {
 	})
 }
 
-func (this *FilePathsController) updateFile(ctx *gin.Context) {
+func (fp *FilePathsController) updateFile(ctx *gin.Context) {
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	filePathId := ctx.Param("filePathId")
-	path, err := this.filePaths.UpdateFile(file.Filename, filePathId)
+	path, err := fp.filePaths.UpdateFile(file.Filename, filePathId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -67,7 +67,7 @@ func (this *FilePathsController) updateFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *FilePathsController) getFile(ctx *gin.Context) {
+func (fp *FilePathsController) getFile(ctx *gin.Context) {
 	downloadStr := ctx.Query("download")
 	if downloadStr != "" {
 		download, err := strconv.ParseBool(downloadStr)
@@ -80,7 +80,7 @@ func (this *FilePathsController) getFile(ctx *gin.Context) {
 		}
 	}
 	filePathId := ctx.Param("filePathId")
-	path, err := this.filePaths.CheckFilePath(filePathId)
+	path, err := fp.filePaths.CheckFilePath(filePathId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -88,9 +88,9 @@ func (this *FilePathsController) getFile(ctx *gin.Context) {
 	ctx.File(path)
 }
 
-func (this *FilePathsController) delete(ctx *gin.Context) {
+func (fp *FilePathsController) delete(ctx *gin.Context) {
 	filePathId := ctx.Param("filePathId")
-	err := this.filePaths.DeleteOne(filePathId)
+	err := fp.filePaths.DeleteOne(filePathId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -98,8 +98,8 @@ func (this *FilePathsController) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *FilePathsController) getRequirements(ctx *gin.Context) {
-	data, err := this.filePaths.GetRequirementsFiles()
+func (fp *FilePathsController) getRequirements(ctx *gin.Context) {
+	data, err := fp.filePaths.GetRequirementsFiles()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -110,15 +110,15 @@ func (this *FilePathsController) getRequirements(ctx *gin.Context) {
 	})
 }
 
-func (this *FilePathsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/:filePathId", this.getFile)
-	publicRg.GET("/get/requirements", this.getRequirements)
+func (fp *FilePathsController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+	publicRg.GET("/get/:filePathId", fp.getFile)
+	publicRg.GET("/get/requirements", fp.getRequirements)
 
-	adminRg.DELETE("/delete/:filePathId", this.delete)
-	adminRg.PUT("/update/:filePathId", this.updateFile)
-	adminRg.POST("/upload/:resourceType", this.uploadFile)
+	adminRg.DELETE("/delete/:filePathId", fp.delete)
+	adminRg.PUT("/update/:filePathId", fp.updateFile)
+	adminRg.POST("/upload/:resourceType", fp.uploadFile)
 }
 
-func (this *FilePathsController) GetDeleteHandler() func(filter primitive.M) error {
-	return this.filePaths.DeleteManyHandler
+func (fp *FilePathsController) GetDeleteHandler() func(filter primitive.M) error {
+	return fp.filePaths.DeleteManyHandler
 }

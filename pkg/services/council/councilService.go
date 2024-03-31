@@ -1,4 +1,4 @@
-package services
+package council
 
 import (
 	"context"
@@ -23,55 +23,55 @@ func NewCouncilService() *CouncilService {
 	}
 }
 
-func (this *CouncilService) Create(member models.CouncilMemberCreate) error {
-	_, err := this.storage.InsertOne(this.ctx, member)
+func (cs *CouncilService) Create(member models.CouncilMemberCreate) error {
+	_, err := cs.storage.InsertOne(cs.ctx, member)
 	return err
 }
 
-func (this *CouncilService) Update(memberIdStr string, memberUpdate models.CouncilMemberUpdate) error {
+func (cs *CouncilService) Update(memberIdStr string, memberUpdate models.CouncilMemberUpdate) error {
 	id, err := primitive.ObjectIDFromHex(memberIdStr)
 	if err != nil {
 		return err
 	}
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": memberUpdate}
-	res, err := this.storage.UpdateOne(this.ctx, filter, update)
+	res, err := cs.storage.UpdateOne(cs.ctx, filter, update)
 	if res.MatchedCount == 0 {
-		return errors.New("Document not found.")
+		return errors.New("document not found")
 	}
 	return err
 }
 
-func (this *CouncilService) Delete(id primitive.ObjectID) error {
+func (cs *CouncilService) Delete(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	_, err := this.storage.DeleteOne(this.ctx, filter)
+	_, err := cs.storage.DeleteOne(cs.ctx, filter)
 	return err
 }
 
-func (this *CouncilService) GetImagePathId(id primitive.ObjectID) (imagePathId primitive.ObjectID, err error) {
+func (cs *CouncilService) GetImagePathId(id primitive.ObjectID) (imagePathId primitive.ObjectID, err error) {
 	var member models.CouncilMemberRead
 	filter := bson.M{"_id": id}
-	err = this.storage.FindOne(this.ctx, filter).Decode(&member)
+	err = cs.storage.FindOne(cs.ctx, filter).Decode(&member)
 	imagePathId = member.ImagePathId
 	return
 }
 
-func (this *CouncilService) GetAll() (members []models.CouncilMemberRead, err error) {
+func (cs *CouncilService) GetAll() (members []models.CouncilMemberRead, err error) {
 	filter := bson.M{}
-	cur, err := this.storage.Find(this.ctx, filter)
+	cur, err := cs.storage.Find(cs.ctx, filter)
 	if err != nil {
 		return
 	}
-	err = cur.All(this.ctx, &members)
+	err = cur.All(cs.ctx, &members)
 	return
 }
 
-func (this *CouncilService) Get(memberIdStr string) (member models.CouncilMemberRead, err error) {
+func (cs *CouncilService) Get(memberIdStr string) (member models.CouncilMemberRead, err error) {
 	memberId, err := primitive.ObjectIDFromHex(memberIdStr)
 	if err != nil {
 		return
 	}
 	filter := bson.M{"_id": memberId}
-	err = this.storage.FindOne(this.ctx, filter).Decode(&member)
+	err = cs.storage.FindOne(cs.ctx, filter).Decode(&member)
 	return
 }

@@ -1,9 +1,9 @@
-package controllers
+package article
 
 import (
 	"net/http"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/pkg/services"
+	"urfu-radio-journal/pkg/services/article"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,26 +11,26 @@ import (
 )
 
 type ArticleController struct {
-	articles       *services.ArticleService
+	articles       *article.ArticleService
 	deleteFiles    func(filter primitive.M) error
 	deleteComments func(filter primitive.M) error
 }
 
 func NewArticleController(deleteFileHandler func(filter primitive.M) error, deleteCommentsHandler func(filter primitive.M) error) *ArticleController {
 	return &ArticleController{
-		articles:       services.NewArticleService(),
+		articles:       article.NewArticleService(),
 		deleteFiles:    deleteFileHandler,
 		deleteComments: deleteCommentsHandler,
 	}
 }
 
-func (this *ArticleController) create(ctx *gin.Context) {
+func (a *ArticleController) create(ctx *gin.Context) {
 	var article models.ArticleCreate
 	if err := ctx.ShouldBindJSON(&article); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	articleId, err := this.articles.Create(article)
+	articleId, err := a.articles.Create(article)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -41,9 +41,9 @@ func (this *ArticleController) create(ctx *gin.Context) {
 	})
 }
 
-func (this *ArticleController) getAllArticles(ctx *gin.Context) {
+func (a *ArticleController) getAllArticles(ctx *gin.Context) {
 	editionId := ctx.Query("editionId")
-	result, err := this.articles.GetAll(editionId)
+	result, err := a.articles.GetAll(editionId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -51,9 +51,9 @@ func (this *ArticleController) getAllArticles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": result})
 }
 
-func (this *ArticleController) getArticleById(ctx *gin.Context) {
+func (a *ArticleController) getArticleById(ctx *gin.Context) {
 	articleId := ctx.Param("articleId")
-	article, err := this.articles.Get(articleId)
+	article, err := a.articles.Get(articleId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -64,75 +64,75 @@ func (this *ArticleController) getArticleById(ctx *gin.Context) {
 	})
 }
 
-func (this *ArticleController) update(ctx *gin.Context) {
+func (a *ArticleController) update(ctx *gin.Context) {
 	var article models.ArticleUpdate
 	if err := ctx.ShouldBindJSON(&article); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.articles.Update(article); err != nil {
+	if err := a.articles.Update(article); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *ArticleController) delete(ctx *gin.Context) {
+func (a *ArticleController) delete(ctx *gin.Context) {
 	articleIdStr := ctx.Param("id")
 	articleId, err := primitive.ObjectIDFromHex(articleIdStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	filePathId, err := this.articles.GetFilePathId(articleId)
+	filePathId, err := a.articles.GetFilePathId(articleId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	articlesFilter := bson.M{"articleId": articleId}
 	filePathsFilter := bson.M{"_id": filePathId}
-	if err := this.deleteContent(articlesFilter, filePathsFilter); err != nil {
+	if err := a.deleteContent(articlesFilter, filePathsFilter); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.articles.Delete(articleId); err != nil {
+	if err := a.articles.Delete(articleId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *ArticleController) deleteContent(articlesFilter, filePathsFilter primitive.M) error {
-	if err := this.deleteComments(articlesFilter); err != nil {
+func (a *ArticleController) deleteContent(articlesFilter, filePathsFilter primitive.M) error {
+	if err := a.deleteComments(articlesFilter); err != nil {
 		return err
 	}
-	if err := this.deleteFiles(filePathsFilter); err != nil {
+	if err := a.deleteFiles(filePathsFilter); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *ArticleController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/all", this.getAllArticles)
-	publicRg.GET("/get/:articleId", this.getArticleById)
+func (a *ArticleController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+	publicRg.GET("/get/all", a.getAllArticles)
+	publicRg.GET("/get/:articleId", a.getArticleById)
 
-	adminRg.POST("/create", this.create)
-	adminRg.PUT("/update", this.update)
-	adminRg.DELETE("/delete/:id", this.delete)
+	adminRg.POST("/create", a.create)
+	adminRg.PUT("/update", a.update)
+	adminRg.DELETE("/delete/:id", a.delete)
 }
 
-func (this *ArticleController) GetDeleteHandler() func(primitive.ObjectID) error {
+func (a *ArticleController) GetDeleteHandler() func(primitive.ObjectID) error {
 	return func(editionId primitive.ObjectID) error {
-		articlesId, filePathsId, err := this.articles.GetIdsByEditionId(editionId)
+		articlesId, filePathsId, err := a.articles.GetIdsByEditionId(editionId)
 		articlesFilter := bson.M{"articleId": bson.M{"$in": articlesId}}
 		filePathsFilter := bson.M{"_id": bson.M{"$in": filePathsId}}
 		if err != nil {
 			return err
 		}
-		if err := this.deleteContent(articlesFilter, filePathsFilter); err != nil {
+		if err := a.deleteContent(articlesFilter, filePathsFilter); err != nil {
 			return err
 		}
-		if err := this.articles.DeleteManyHandler(editionId); err != nil {
+		if err := a.articles.DeleteManyHandler(editionId); err != nil {
 			return err
 		}
 		return nil

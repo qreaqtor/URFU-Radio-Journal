@@ -1,9 +1,9 @@
-package controllers
+package council
 
 import (
 	"net/http"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/pkg/services"
+	"urfu-radio-journal/pkg/services/council"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,46 +11,46 @@ import (
 )
 
 type CouncilController struct {
-	members     *services.CouncilService
+	members     *council.CouncilService
 	deleteFiles func(filter primitive.M) error
 }
 
 func NewCouncilController(deleteFilesHandler func(filter primitive.M) error) *CouncilController {
 	return &CouncilController{
-		members:     services.NewCouncilService(),
+		members:     council.NewCouncilService(),
 		deleteFiles: deleteFilesHandler,
 	}
 }
 
-func (this *CouncilController) create(ctx *gin.Context) {
+func (c *CouncilController) create(ctx *gin.Context) {
 	var member models.CouncilMemberCreate
 	if err := ctx.ShouldBindJSON(&member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.members.Create(member); err != nil {
+	if err := c.members.Create(member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *CouncilController) update(ctx *gin.Context) {
+func (c *CouncilController) update(ctx *gin.Context) {
 	var member models.CouncilMemberUpdate
 	if err := ctx.ShouldBindJSON(&member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	memberId := ctx.Param("id")
-	if err := this.members.Update(memberId, member); err != nil {
+	if err := c.members.Update(memberId, member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *CouncilController) getAll(ctx *gin.Context) {
-	data, err := this.members.GetAll()
+func (c *CouncilController) getAll(ctx *gin.Context) {
+	data, err := c.members.GetAll()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -61,9 +61,9 @@ func (this *CouncilController) getAll(ctx *gin.Context) {
 	})
 }
 
-func (this *CouncilController) getMemberById(ctx *gin.Context) {
+func (c *CouncilController) getMemberById(ctx *gin.Context) {
 	memberId := ctx.Param("memberId")
-	member, err := this.members.Get(memberId)
+	member, err := c.members.Get(memberId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -74,35 +74,35 @@ func (this *CouncilController) getMemberById(ctx *gin.Context) {
 	})
 }
 
-func (this *CouncilController) delete(ctx *gin.Context) {
+func (c *CouncilController) delete(ctx *gin.Context) {
 	memberIdStr := ctx.Param("id")
 	memberId, err := primitive.ObjectIDFromHex(memberIdStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	imagePathId, err := this.members.GetImagePathId(memberId)
+	imagePathId, err := c.members.GetImagePathId(memberId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	filter := bson.M{"_id": imagePathId}
-	if err := this.deleteFiles(filter); err != nil {
+	if err := c.deleteFiles(filter); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.members.Delete(memberId); err != nil {
+	if err := c.members.Delete(memberId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *CouncilController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/all", this.getAll)
-	publicRg.GET("/get/:memberId", this.getMemberById)
+func (c *CouncilController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+	publicRg.GET("/get/all", c.getAll)
+	publicRg.GET("/get/:memberId", c.getMemberById)
 
-	adminRg.POST("/create", this.create)
-	adminRg.PUT("/update/:id", this.update)
-	adminRg.DELETE("/delete/:id", this.delete)
+	adminRg.POST("/create", c.create)
+	adminRg.PUT("/update/:id", c.update)
+	adminRg.DELETE("/delete/:id", c.delete)
 }

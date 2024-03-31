@@ -1,9 +1,9 @@
-package controllers
+package edition
 
 import (
 	"net/http"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/pkg/services"
+	"urfu-radio-journal/pkg/services/edition"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,26 +11,26 @@ import (
 )
 
 type EditionController struct {
-	editions       *services.EditionService
+	editions       *edition.EditionService
 	deleteFiles    func(filter primitive.M) error
 	deleteArticles func(primitive.ObjectID) error
 }
 
 func NewEditionController(deleteFilesHandler func(filter primitive.M) error, deleteArticlesHandler func(primitive.ObjectID) error) *EditionController {
 	return &EditionController{
-		editions:       services.NewEditionService(),
+		editions:       edition.NewEditionService(),
 		deleteFiles:    deleteFilesHandler,
 		deleteArticles: deleteArticlesHandler,
 	}
 }
 
-func (this *EditionController) createEdition(ctx *gin.Context) {
+func (e *EditionController) createEdition(ctx *gin.Context) {
 	var edition models.EditionCreate
 	if err := ctx.ShouldBindJSON(&edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	id, err := this.editions.Create(edition)
+	id, err := e.editions.Create(edition)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -41,8 +41,8 @@ func (this *EditionController) createEdition(ctx *gin.Context) {
 	})
 }
 
-func (this *EditionController) getAllEditions(ctx *gin.Context) {
-	res, err := this.editions.GetAll()
+func (e *EditionController) getAllEditions(ctx *gin.Context) {
+	res, err := e.editions.GetAll()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -53,9 +53,9 @@ func (this *EditionController) getAllEditions(ctx *gin.Context) {
 	})
 }
 
-func (this *EditionController) getEditionById(ctx *gin.Context) {
+func (e *EditionController) getEditionById(ctx *gin.Context) {
 	editionId := ctx.Param("editionId")
-	edition, err := this.editions.Get(editionId)
+	edition, err := e.editions.Get(editionId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -66,13 +66,13 @@ func (this *EditionController) getEditionById(ctx *gin.Context) {
 	})
 }
 
-func (this *EditionController) updateEdition(ctx *gin.Context) {
+func (e *EditionController) updateEdition(ctx *gin.Context) {
 	var edition models.EditionUpdate
 	if err := ctx.ShouldBindJSON(&edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err := this.editions.Update(edition)
+	err := e.editions.Update(edition)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -80,39 +80,39 @@ func (this *EditionController) updateEdition(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *EditionController) deleteEdition(ctx *gin.Context) {
+func (e *EditionController) deleteEdition(ctx *gin.Context) {
 	editionIdStr := ctx.Param("id")
-	edition, err := this.editions.Get(editionIdStr)
+	edition, err := e.editions.Get(editionIdStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.deleteContent(edition); err != nil {
+	if err := e.deleteContent(edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	if err := this.editions.Delete(edition.Id); err != nil {
+	if err := e.editions.Delete(edition.Id); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (this *EditionController) deleteContent(edition models.EditionRead) error {
-	if err := this.deleteArticles(edition.Id); err != nil {
+func (e *EditionController) deleteContent(edition models.EditionRead) error {
+	if err := e.deleteArticles(edition.Id); err != nil {
 		return err
 	}
 	toDelete := []primitive.ObjectID{edition.CoverPathId, edition.VideoPathId, edition.FilePathId}
 	filter := bson.M{"_id": bson.M{"$in": toDelete}}
-	err := this.deleteFiles(filter)
+	err := e.deleteFiles(filter)
 	return err
 }
 
-func (this *EditionController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/all", this.getAllEditions)
-	publicRg.GET("/get/:editionId", this.getEditionById)
+func (e *EditionController) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+	publicRg.GET("/get/all", e.getAllEditions)
+	publicRg.GET("/get/:editionId", e.getEditionById)
 
-	adminRg.POST("/create", this.createEdition)
-	adminRg.PUT("/update", this.updateEdition)
-	adminRg.DELETE("/delete/:id", this.deleteEdition)
+	adminRg.POST("/create", e.createEdition)
+	adminRg.PUT("/update", e.updateEdition)
+	adminRg.DELETE("/delete/:id", e.deleteEdition)
 }

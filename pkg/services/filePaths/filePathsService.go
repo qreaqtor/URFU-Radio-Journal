@@ -1,4 +1,4 @@
-package services
+package filePaths
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func getResourceTypes() [4]string {
 	return resourceTypes
 }
 
-func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, err error) {
+func (fps *FilePathsService) CheckFilePath(filePathIdStr string) (path string, err error) {
 	filePathId, err := primitive.ObjectIDFromHex(filePathIdStr)
 	if err != nil {
 		return
@@ -57,20 +57,20 @@ func (this *FilePathsService) CheckFilePath(filePathIdStr string) (path string, 
 		Path string
 	}
 	filter := bson.M{"_id": filePathId}
-	err = this.storage.FindOne(*this.ctx, filter).Decode(&filePath)
+	err = fps.storage.FindOne(*fps.ctx, filter).Decode(&filePath)
 	path = filePath.Path
 	return
 }
 
-func (this *FilePathsService) GetFilePathInfo(filename, resourceType string) (filePathId primitive.ObjectID, path string, err error) {
-	if path, err = this.generateFilePath(filename); err != nil {
+func (fps *FilePathsService) GetFilePathInfo(filename, resourceType string) (filePathId primitive.ObjectID, path string, err error) {
+	if path, err = fps.generateFilePath(filename); err != nil {
 		return
 	}
 	file := bson.M{
 		"path":         path,
 		"resourceType": resourceType,
 	}
-	res, err := this.storage.InsertOne(*this.ctx, file)
+	res, err := fps.storage.InsertOne(*fps.ctx, file)
 	if err != nil {
 		return
 	}
@@ -78,15 +78,17 @@ func (this *FilePathsService) GetFilePathInfo(filename, resourceType string) (fi
 	return
 }
 
-func (this *FilePathsService) GetRequirementsFiles() (files map[string]primitive.ObjectID, err error) {
+func (fps *FilePathsService) GetRequirementsFiles() (files map[string]primitive.ObjectID, err error) {
 	var filePaths []struct {
 		Id   primitive.ObjectID `bson:"_id"`
 		Path string             `bson:"path"`
 	}
 	filter := bson.M{"resourceType": "requirements"}
-	cur, err := this.storage.Find(*this.ctx, filter)
-	err = cur.All(*this.ctx, &filePaths)
+	cur, err := fps.storage.Find(*fps.ctx, filter)
 	if err != nil {
+		return
+	}
+	if err = cur.All(*fps.ctx, &filePaths); err != nil {
 		return
 	}
 	files = make(map[string]primitive.ObjectID, len(filePaths))
@@ -97,7 +99,7 @@ func (this *FilePathsService) GetRequirementsFiles() (files map[string]primitive
 	return
 }
 
-func (this *FilePathsService) DeleteOne(idStr string) error {
+func (fps *FilePathsService) DeleteOne(idStr string) error {
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		return err
@@ -107,7 +109,7 @@ func (this *FilePathsService) DeleteOne(idStr string) error {
 		Path string
 	}
 	filter := bson.M{"_id": id}
-	err = this.storage.FindOneAndDelete(*this.ctx, filter).Decode(&filePath)
+	err = fps.storage.FindOneAndDelete(*fps.ctx, filter).Decode(&filePath)
 	if err != nil {
 		return err
 	}
@@ -115,13 +117,16 @@ func (this *FilePathsService) DeleteOne(idStr string) error {
 	return err
 }
 
-func (this *FilePathsService) DeleteManyHandler(filter primitive.M) error {
+func (fps *FilePathsService) DeleteManyHandler(filter primitive.M) error {
 	var filePaths []struct {
 		Id   primitive.ObjectID
 		Path string
 	}
-	cur, err := this.storage.Find(*this.ctx, filter)
-	if err := cur.All(*this.ctx, &filePaths); err != nil {
+	cur, err := fps.storage.Find(*fps.ctx, filter)
+	if err != nil {
+		return err
+	}
+	if err = cur.All(*fps.ctx, &filePaths); err != nil {
 		return err
 	}
 	for _, v := range filePaths {
@@ -130,12 +135,12 @@ func (this *FilePathsService) DeleteManyHandler(filter primitive.M) error {
 			return err
 		}
 	}
-	_, err = this.storage.DeleteMany(*this.ctx, filter)
+	_, err = fps.storage.DeleteMany(*fps.ctx, filter)
 	return err
 }
 
-func (this *FilePathsService) UpdateFile(filename, filePathIdStr string) (path string, err error) {
-	path, err = this.generateFilePath(filename)
+func (fps *FilePathsService) UpdateFile(filename, filePathIdStr string) (path string, err error) {
+	path, err = fps.generateFilePath(filename)
 	if err != nil {
 		return
 	}
@@ -143,20 +148,20 @@ func (this *FilePathsService) UpdateFile(filename, filePathIdStr string) (path s
 	if err != nil {
 		return
 	}
-	err = this.updateFilePath(path, filePathId)
+	err = fps.updateFilePath(path, filePathId)
 	return
 }
 
-func (this *FilePathsService) CheckResourceType(resourceType string) error {
-	for _, v := range this.resourceTypes {
+func (fps *FilePathsService) CheckResourceType(resourceType string) error {
+	for _, v := range fps.resourceTypes {
 		if resourceType == v {
 			return nil
 		}
 	}
-	return fmt.Errorf("Incorrect resource type: %s", resourceType)
+	return fmt.Errorf("incorrect resource type: %s", resourceType)
 }
 
-func (this *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
+func (fps *FilePathsService) updateFilePath(path string, filepathId primitive.ObjectID) error {
 	var filePath struct {
 		Path string `bson:"path"`
 	}
@@ -166,7 +171,7 @@ func (this *FilePathsService) updateFilePath(path string, filepathId primitive.O
 	options := options.FindOneAndUpdateOptions{
 		ReturnDocument: &returnDoc,
 	}
-	err := this.storage.FindOneAndUpdate(*this.ctx, filter, update, &options).Decode(&filePath)
+	err := fps.storage.FindOneAndUpdate(*fps.ctx, filter, update, &options).Decode(&filePath)
 	if err != nil {
 		return err
 	}
@@ -174,12 +179,12 @@ func (this *FilePathsService) updateFilePath(path string, filepathId primitive.O
 	return err
 }
 
-func (this *FilePathsService) generateFilePath(filename string) (path string, err error) {
+func (fps *FilePathsService) generateFilePath(filename string) (path string, err error) {
 	ext := filepath.Ext(filename)
-	if dir, ok := this.directories[ext]; ok {
-		path = fmt.Sprintf("%s/%s/%s", this.basePath, dir, filename)
+	if dir, ok := fps.directories[ext]; ok {
+		path = fmt.Sprintf("%s/%s/%s", fps.basePath, dir, filename)
 		return
 	}
-	err = errors.New("This file extension is not supported.")
+	err = errors.New("this file extension is not supported")
 	return
 }

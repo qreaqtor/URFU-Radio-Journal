@@ -1,4 +1,4 @@
-package services
+package article
 
 import (
 	"context"
@@ -23,13 +23,13 @@ func NewArticleService() *ArticleService {
 	}
 }
 
-func (this *ArticleService) Create(article models.ArticleCreate) (id primitive.ObjectID, err error) {
-	res, err := this.storage.InsertOne(this.ctx, article)
+func (as *ArticleService) Create(article models.ArticleCreate) (id primitive.ObjectID, err error) {
+	res, err := as.storage.InsertOne(as.ctx, article)
 	id = res.InsertedID.(primitive.ObjectID)
 	return
 }
 
-func (this *ArticleService) GetAll(editionIdStr string) (articles []models.ArticleRead, err error) {
+func (as *ArticleService) GetAll(editionIdStr string) (articles []models.ArticleRead, err error) {
 	filter := bson.M{}
 	if editionIdStr != "" {
 		var editionId primitive.ObjectID
@@ -39,34 +39,34 @@ func (this *ArticleService) GetAll(editionIdStr string) (articles []models.Artic
 		}
 		filter["editionId"] = editionId
 	}
-	cur, err := this.storage.Find(this.ctx, filter)
+	cur, err := as.storage.Find(as.ctx, filter)
 	if err != nil {
 		return
 	}
-	err = cur.All(this.ctx, &articles)
+	err = cur.All(as.ctx, &articles)
 	return
 }
 
-func (this *ArticleService) Get(articleIdStr string) (article models.ArticleRead, err error) {
+func (as *ArticleService) Get(articleIdStr string) (article models.ArticleRead, err error) {
 	articleId, err := primitive.ObjectIDFromHex(articleIdStr)
 	if err != nil {
 		return
 	}
 	filter := bson.M{"_id": articleId}
-	err = this.storage.FindOne(this.ctx, filter).Decode(&article)
+	err = as.storage.FindOne(as.ctx, filter).Decode(&article)
 	return
 }
 
-func (this *ArticleService) GetIdsByEditionId(editionId primitive.ObjectID) (articlesId, filePathsId []primitive.ObjectID, err error) {
+func (as *ArticleService) GetIdsByEditionId(editionId primitive.ObjectID) (articlesId, filePathsId []primitive.ObjectID, err error) {
 	articlesId = make([]primitive.ObjectID, 0)
 	filePathsId = make([]primitive.ObjectID, 0)
 	filter := bson.M{"editionId": editionId}
-	cur, err := this.storage.Find(this.ctx, filter)
+	cur, err := as.storage.Find(as.ctx, filter)
 	if err != nil {
 		return
 	}
 	var res []models.ArticleRead
-	if err = cur.All(this.ctx, &res); err != nil {
+	if err = cur.All(as.ctx, &res); err != nil {
 		return
 	}
 	for _, v := range res {
@@ -76,10 +76,10 @@ func (this *ArticleService) GetIdsByEditionId(editionId primitive.ObjectID) (art
 	return
 }
 
-func (this *ArticleService) GetFilePathId(id primitive.ObjectID) (filePathId primitive.ObjectID, err error) {
+func (as *ArticleService) GetFilePathId(id primitive.ObjectID) (filePathId primitive.ObjectID, err error) {
 	filter := bson.M{"_id": id}
 	var article models.ArticleRead
-	err = this.storage.FindOne(this.ctx, filter).Decode(&article)
+	err = as.storage.FindOne(as.ctx, filter).Decode(&article)
 	if err != nil {
 		return
 	}
@@ -87,24 +87,24 @@ func (this *ArticleService) GetFilePathId(id primitive.ObjectID) (filePathId pri
 	return
 }
 
-func (this *ArticleService) Update(newArticle models.ArticleUpdate) error {
+func (as *ArticleService) Update(newArticle models.ArticleUpdate) error {
 	filter := bson.M{"_id": newArticle.Id}
 	update := bson.M{"$set": newArticle}
-	res, err := this.storage.UpdateOne(this.ctx, filter, update)
+	res, err := as.storage.UpdateOne(as.ctx, filter, update)
 	if res.MatchedCount == 0 {
-		return errors.New("Document not found.")
+		return errors.New("document not found")
 	}
 	return err
 }
 
-func (this *ArticleService) Delete(id primitive.ObjectID) error {
+func (as *ArticleService) Delete(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	_, err := this.storage.DeleteOne(this.ctx, filter)
+	_, err := as.storage.DeleteOne(as.ctx, filter)
 	return err
 }
 
-func (this *ArticleService) DeleteManyHandler(editionId primitive.ObjectID) error {
+func (as *ArticleService) DeleteManyHandler(editionId primitive.ObjectID) error {
 	filter := bson.M{"editionId": editionId}
-	_, err := this.storage.DeleteMany(this.ctx, filter)
+	_, err := as.storage.DeleteMany(as.ctx, filter)
 	return err
 }

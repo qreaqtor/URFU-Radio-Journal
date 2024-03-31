@@ -1,4 +1,4 @@
-package services
+package auth
 
 import (
 	"errors"
@@ -44,25 +44,25 @@ func NewAuthService() *AuthService {
 	}
 }
 
-func (this *AuthService) checkAdmin(admin models.Admin) bool {
-	return admin.Username == this.admin.Username && admin.Password == this.admin.Password
+func (as *AuthService) checkAdmin(admin models.Admin) bool {
+	return admin.Username == as.admin.Username && admin.Password == as.admin.Password
 }
 
-func (this *AuthService) Login(admin models.Admin) (token string, err error) {
-	if this.checkAdmin(admin) {
-		token, err = this.CreateToken(admin)
+func (as *AuthService) Login(admin models.Admin) (token string, err error) {
+	if as.checkAdmin(admin) {
+		token, err = as.CreateToken(admin)
 		return
 	}
-	err = errors.New("Check login or password.")
+	err = errors.New("check login or password")
 	return
 }
 
-func (this *AuthService) CreateToken(admin models.Admin) (string, error) {
+func (as *AuthService) CreateToken(admin models.Admin) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": admin.Username,
-		"exp":      time.Now().Add(time.Hour * this.tokenLifetime).Unix(), // Время жизни токена
+		"exp":      time.Now().Add(time.Hour * as.tokenLifetime).Unix(), // Время жизни токена
 	})
-	tokenString, err := token.SignedString(this.secret)
+	tokenString, err := token.SignedString(as.secret)
 	if err != nil {
 		return "", err
 	}
@@ -70,9 +70,9 @@ func (this *AuthService) CreateToken(admin models.Admin) (string, error) {
 	return tokenString, nil
 }
 
-func (this *AuthService) ValidateToken(tokenString string) error {
+func (as *AuthService) ValidateToken(tokenString string) error {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return this.secret, nil
+		return as.secret, nil
 	})
 	if err != nil {
 		return err
@@ -82,5 +82,5 @@ func (this *AuthService) ValidateToken(tokenString string) error {
 			return nil
 		}
 	}
-	return errors.New("Invalid token")
+	return errors.New("invalid token")
 }

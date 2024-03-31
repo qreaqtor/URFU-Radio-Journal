@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"urfu-radio-journal/internal/controllers"
+
+	"urfu-radio-journal/internal/controllers/auth"
+	"urfu-radio-journal/internal/controllers/article"
+	"urfu-radio-journal/internal/controllers/comments"
+	"urfu-radio-journal/internal/controllers/edition"
+	"urfu-radio-journal/internal/controllers/filePaths"
+	"urfu-radio-journal/internal/controllers/council"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -24,7 +30,7 @@ func main() {
 	router.Use(cors.New(config))
 
 	authPath := router.Group("/admin/auth")
-	auth := controllers.NewAuthController()
+	auth := auth.NewAuthController()
 	auth.RegisterRoutes(authPath)
 
 	publicFilesPath := router.Group("/files")
@@ -32,7 +38,7 @@ func main() {
 	adminFilesPath := router.Group("/admin/files")
 	adminFilesPath.Use(auth.AuthMiddleware())
 
-	files := controllers.NewFilesController()
+	files := filePaths.NewFilesController()
 	files.RegisterRoutes(publicFilesPath, adminFilesPath)
 
 	publicCommentsPath := router.Group("/comments")
@@ -40,7 +46,7 @@ func main() {
 	adminCommentsPath := router.Group("/admin/comments")
 	adminCommentsPath.Use(auth.AuthMiddleware())
 
-	comments := controllers.NewCommentsController()
+	comments := comments.NewCommentsController()
 	comments.RegisterRoutes(publicCommentsPath, adminCommentsPath)
 
 	publicArticlePath := router.Group("/articles")
@@ -48,7 +54,7 @@ func main() {
 	adminArticlePath := router.Group("/admin/articles")
 	adminArticlePath.Use(auth.AuthMiddleware())
 
-	article := controllers.NewArticleController(files.GetDeleteHandler(), comments.GetDeleteHandler())
+	article := article.NewArticleController(files.GetDeleteHandler(), comments.GetDeleteHandler())
 	article.RegisterRoutes(publicArticlePath, adminArticlePath)
 
 	publicEditionPath := router.Group("/editions")
@@ -56,7 +62,7 @@ func main() {
 	adminEditionPath := router.Group("/admin/editions")
 	adminEditionPath.Use(auth.AuthMiddleware())
 
-	edition := controllers.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
+	edition := edition.NewEditionController(files.GetDeleteHandler(), article.GetDeleteHandler())
 	edition.RegisterRoutes(publicEditionPath, adminEditionPath)
 
 	councilPublicPath := router.Group("/council/members")
@@ -64,7 +70,7 @@ func main() {
 	councilAdminPath := router.Group("/admin/council/members")
 	councilAdminPath.Use(auth.AuthMiddleware())
 
-	council := controllers.NewCouncilController(files.GetDeleteHandler())
+	council := council.NewCouncilController(files.GetDeleteHandler())
 	council.RegisterRoutes(councilPublicPath, councilAdminPath)
 
 	port := os.Getenv("PORT")
