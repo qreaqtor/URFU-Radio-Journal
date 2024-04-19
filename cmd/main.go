@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
-	"urfu-radio-journal/internal/controllers/auth"
 	"urfu-radio-journal/internal/controllers/article"
+	"urfu-radio-journal/internal/controllers/auth"
 	"urfu-radio-journal/internal/controllers/comments"
+	"urfu-radio-journal/internal/controllers/council"
 	"urfu-radio-journal/internal/controllers/edition"
 	"urfu-radio-journal/internal/controllers/filePaths"
-	"urfu-radio-journal/internal/controllers/council"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,7 @@ func main() {
 	frontend := os.Getenv("FRONTEND_ADRESS")
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{frontend}
+	config.AllowOrigins = []string{frontend, "http://localhost:3000"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
 	config.AddAllowHeaders("Authorization", "Cookie")
