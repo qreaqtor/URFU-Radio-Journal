@@ -3,6 +3,7 @@ package councilst
 import (
 	"context"
 	"errors"
+	"fmt"
 	"urfu-radio-journal/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,12 +23,16 @@ func NewCouncilStorage(db *mongo.Database, collection string) *CouncilStorage {
 	}
 }
 
-func (cs *CouncilStorage) Create(member *models.CouncilMemberCreate) error {
-	_, err := cs.collection.InsertOne(cs.ctx, member)
-	return err
+func (cs *CouncilStorage) InsertOne(member *models.CouncilMemberCreate) (string, error) {
+	res, err := cs.collection.InsertOne(cs.ctx, member)
+	id, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("bad value for id")
+	}
+	return id.Hex(), err
 }
 
-func (cs *CouncilStorage) Update(memberIdStr string, memberUpdate models.CouncilMemberUpdate) error {
+func (cs *CouncilStorage) UpdateOne(memberIdStr string, memberUpdate *models.CouncilMemberUpdate) error {
 	id, err := primitive.ObjectIDFromHex(memberIdStr)
 	if err != nil {
 		return err
@@ -41,36 +46,48 @@ func (cs *CouncilStorage) Update(memberIdStr string, memberUpdate models.Council
 	return err
 }
 
-func (cs *CouncilStorage) Delete(id primitive.ObjectID) error {
+func (cs *CouncilStorage) Delete(idStr string) error {
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{"_id": id}
-	_, err := cs.collection.DeleteOne(cs.ctx, filter)
+	res, err := cs.collection.DeleteOne(cs.ctx, filter)
+	if res.DeletedCount != 1 {
+		return fmt.Errorf("deleted count was %d, but want 1", res.DeletedCount)
+	}
 	return err
 }
 
-func (cs *CouncilStorage) GetImagePathId(id primitive.ObjectID) (imagePathId primitive.ObjectID, err error) {
+func (cs *CouncilStorage) GetImagePathId(idStr string) (string, error) {
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return "", err
+	}
 	var member models.CouncilMemberRead
 	filter := bson.M{"_id": id}
 	err = cs.collection.FindOne(cs.ctx, filter).Decode(&member)
-	imagePathId = member.ImagePathId
-	return
+	return member.ImagePathId.Hex(), err
 }
 
-func (cs *CouncilStorage) GetAll() (members []models.CouncilMemberRead, err error) {
+func (cs *CouncilStorage) GetAll() ([]*models.CouncilMemberRead, error) {
 	filter := bson.M{}
 	cur, err := cs.collection.Find(cs.ctx, filter)
 	if err != nil {
-		return
+		return nil, err
 	}
+	members := make([]*models.CouncilMemberRead, 0)
 	err = cur.All(cs.ctx, &members)
-	return
+	return members, err
 }
 
-func (cs *CouncilStorage) Get(memberIdStr string) (member models.CouncilMemberRead, err error) {
+func (cs *CouncilStorage) FindOne(memberIdStr string) (*models.CouncilMemberRead, error) {
 	memberId, err := primitive.ObjectIDFromHex(memberIdStr)
 	if err != nil {
-		return
+		return nil, err
 	}
+	member := &models.CouncilMemberRead{}
 	filter := bson.M{"_id": memberId}
-	err = cs.collection.FindOne(cs.ctx, filter).Decode(&member)
-	return
+	err = cs.collection.FindOne(cs.ctx, filter).Decode(member)
+	return member, err
 }

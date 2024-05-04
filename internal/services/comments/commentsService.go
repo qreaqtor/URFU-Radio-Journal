@@ -8,11 +8,10 @@ import (
 
 type storage interface {
 	InsertOne(*models.CommentCreate) (string, error)
-	Find(string) ([]*models.CommentRead, error)
-	FindOne(string) (*models.CommentRead, error)
+	GetAll(bool, string) ([]*models.CommentRead, error)
 	UpdateOne(*models.CommentUpdate) error
 	Delete(string) error
-	Approve(models.CommentApprove, string) error
+	Approve(*models.CommentApprove, string) error
 }
 
 type CommentsService struct {
@@ -62,15 +61,15 @@ func (cs *CommentsService) GetAll(onlyApproved bool, articleIdStr string) ([]*mo
 	if articleIdStr == "" {
 		return nil, fmt.Errorf("articleId is empty")
 	}
-	result, err := cs.repo.Find(articleIdStr)
+	result, err := cs.repo.GetAll(onlyApproved, articleIdStr)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (cs *CommentsService) Update(comment models.CommentUpdate) error {
-	return cs.repo.UpdateOne(&comment)
+func (cs *CommentsService) Update(comment *models.CommentUpdate) error {
+	return cs.repo.UpdateOne(comment)
 }
 
 func (cs *CommentsService) Delete(id string) error {
@@ -82,7 +81,7 @@ func (cs *CommentsService) Delete(id string) error {
 // 	return err
 // }
 
-func (cs *CommentsService) Approve(commentApprove models.CommentApprove) error {
+func (cs *CommentsService) Approve(commentApprove *models.CommentApprove) error {
 	unicodeRange, err := cs.determineLanguage(commentApprove.ContentPart)
 	if err != nil {
 		return err

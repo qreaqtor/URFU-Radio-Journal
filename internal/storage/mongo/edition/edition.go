@@ -3,6 +3,7 @@ package editionst
 import (
 	"context"
 	"errors"
+	"fmt"
 	"urfu-radio-journal/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,33 +23,38 @@ func NewEditionService(db *mongo.Database, collection string) *EditionStorage {
 	}
 }
 
-func (es *EditionStorage) Create(edition models.EditionCreate) (id primitive.ObjectID, err error) {
+func (es *EditionStorage) InsertOne(edition *models.EditionCreate) (string, error) {
 	res, err := es.collection.InsertOne(es.ctx, edition)
-	id = res.InsertedID.(primitive.ObjectID)
-	return
+	if err != nil {
+		return "", nil
+	}
+	id := res.InsertedID.(primitive.ObjectID)
+	return id.Hex(), nil
 }
 
-func (es *EditionStorage) GetAll() (editions []models.EditionRead, err error) {
+func (es *EditionStorage) GetAll() ([]*models.EditionRead, error) {
 	filter := bson.M{}
 	cur, err := es.collection.Find(es.ctx, filter)
 	if err != nil {
-		return
+		return nil, err
 	}
+	editions := make([]*models.EditionRead, 0)
 	err = cur.All(es.ctx, &editions)
-	return
+	return editions, err
 }
 
-func (es *EditionStorage) Get(id string) (edition models.EditionRead, err error) {
+func (es *EditionStorage) FindOne(id string) (*models.EditionRead, error) {
 	editionId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return
+		return nil, err
 	}
 	filter := bson.M{"_id": editionId}
+	edition := &models.EditionRead{}
 	err = es.collection.FindOne(es.ctx, filter).Decode(&edition)
-	return
+	return edition, err
 }
 
-func (es *EditionStorage) Update(newEdition models.EditionUpdate) error {
+func (es *EditionStorage) UpdateOne(newEdition *models.EditionUpdate) error {
 	filter := bson.M{"_id": newEdition.Id}
 	update := bson.M{"$set": newEdition}
 	res, err := es.collection.UpdateOne(es.ctx, filter, update)
@@ -58,8 +64,15 @@ func (es *EditionStorage) Update(newEdition models.EditionUpdate) error {
 	return err
 }
 
-func (es *EditionStorage) Delete(editionId primitive.ObjectID) error {
+func (es *EditionStorage) Delete(editionIdStr string) error {
+	editionId, err := primitive.ObjectIDFromHex(editionIdStr)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{"_id": editionId}
-	_, err := es.collection.DeleteOne(es.ctx, filter)
+	res, err := es.collection.DeleteOne(es.ctx, filter)
+	if res.DeletedCount != 1 {
+		return fmt.Errorf("deleted count was %d, but want 1", res.DeletedCount)
+	}
 	return err
 }

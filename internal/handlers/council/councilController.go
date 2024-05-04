@@ -8,10 +8,10 @@ import (
 )
 
 type service interface {
-	Create(models.CouncilMemberCreate) error
-	GetAll() ([]models.CouncilMemberRead, error)
-	Get(string) (models.CouncilMemberRead, error)
-	Update(string, models.CouncilMemberUpdate) error
+	Create(*models.CouncilMemberCreate) error
+	GetAll() ([]*models.CouncilMemberRead, error)
+	Get(string) (*models.CouncilMemberRead, error)
+	Update(string, *models.CouncilMemberUpdate) error
 	Delete(string) error
 }
 
@@ -25,9 +25,9 @@ func NewCouncilHandler(council service) *CouncilHandler {
 	}
 }
 
-func (c *CouncilHandler) create(ctx *gin.Context) {
-	var member models.CouncilMemberCreate
-	if err := ctx.ShouldBindJSON(&member); err != nil {
+func (c *CouncilHandler) Create(ctx *gin.Context) {
+	member := &models.CouncilMemberCreate{}
+	if err := ctx.ShouldBindJSON(member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -38,9 +38,9 @@ func (c *CouncilHandler) create(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (c *CouncilHandler) update(ctx *gin.Context) {
-	var member models.CouncilMemberUpdate
-	if err := ctx.ShouldBindJSON(&member); err != nil {
+func (c *CouncilHandler) Update(ctx *gin.Context) {
+	member := &models.CouncilMemberUpdate{}
+	if err := ctx.ShouldBindJSON(member); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -52,7 +52,7 @@ func (c *CouncilHandler) update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (c *CouncilHandler) getAll(ctx *gin.Context) {
+func (c *CouncilHandler) GetAll(ctx *gin.Context) {
 	data, err := c.members.GetAll()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -64,7 +64,7 @@ func (c *CouncilHandler) getAll(ctx *gin.Context) {
 	})
 }
 
-func (c *CouncilHandler) getMemberById(ctx *gin.Context) {
+func (c *CouncilHandler) GetMemberById(ctx *gin.Context) {
 	memberId := ctx.Param("memberId")
 	member, err := c.members.Get(memberId)
 	if err != nil {
@@ -77,7 +77,7 @@ func (c *CouncilHandler) getMemberById(ctx *gin.Context) {
 	})
 }
 
-func (c *CouncilHandler) delete(ctx *gin.Context) {
+func (c *CouncilHandler) Delete(ctx *gin.Context) {
 	memberId := ctx.Param("id")
 	// memberId, err := primitive.ObjectIDFromHex(memberIdStr)
 	// if err != nil {
@@ -101,11 +101,11 @@ func (c *CouncilHandler) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (c *CouncilHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/all", c.getAll)
-	publicRg.GET("/get/:memberId", c.getMemberById)
+// func (c *CouncilHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+// 	publicRg.GET("/get/all", c.getAll)
+// 	publicRg.GET("/get/:memberId", c.getMemberById)
 
-	adminRg.POST("/create", c.create)
-	adminRg.PUT("/update/:id", c.update)
-	adminRg.DELETE("/delete/:id", c.delete)
-}
+// 	adminRg.POST("/create", c.create)
+// 	adminRg.PUT("/update/:id", c.update)
+// 	adminRg.DELETE("/delete/:id", c.delete)
+// }

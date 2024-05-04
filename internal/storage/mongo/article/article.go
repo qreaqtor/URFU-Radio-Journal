@@ -75,10 +75,14 @@ func (as *ArticleStorage) Delete(IdStr string) error {
 	return err
 }
 
-func (as *ArticleStorage) GetFilePathId(id primitive.ObjectID) (string, error) {
+func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return "", err
+	}
 	filter := bson.M{"_id": id}
 	var article models.ArticleRead
-	err := as.collection.FindOne(as.ctx, filter).Decode(&article)
+	err = as.collection.FindOne(as.ctx, filter).Decode(&article)
 	if err != nil {
 		return "", nil
 	}

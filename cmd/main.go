@@ -8,10 +8,19 @@ import (
 
 	articlehand "urfu-radio-journal/internal/handlers/article"
 	authand "urfu-radio-journal/internal/handlers/auth"
+	commentshand "urfu-radio-journal/internal/handlers/comments"
+	councilhand "urfu-radio-journal/internal/handlers/council"
+	editionhand "urfu-radio-journal/internal/handlers/edition"
 	"urfu-radio-journal/internal/handlers/middleware"
 	articlesrv "urfu-radio-journal/internal/services/article"
 	authsrv "urfu-radio-journal/internal/services/auth"
+	commentsrv "urfu-radio-journal/internal/services/comments"
+	councilsrv "urfu-radio-journal/internal/services/council"
+	editionsrv "urfu-radio-journal/internal/services/edition"
 	articlest "urfu-radio-journal/internal/storage/mongo/article"
+	commentst "urfu-radio-journal/internal/storage/mongo/comments"
+	councilst "urfu-radio-journal/internal/storage/mongo/council"
+	editionst "urfu-radio-journal/internal/storage/mongo/edition"
 	setupst "urfu-radio-journal/internal/storage/mongo/setup"
 
 	"github.com/gin-contrib/cors"
@@ -19,6 +28,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// для этого надо завести отдельный файл с конфигами
 var (
 	userMongo, passwordMongo, dbNameMongo string
 
@@ -28,6 +38,9 @@ var (
 	frontend string
 
 	port string
+
+	// это для mysql
+	// dbUser, dbPassword, addr, dbName string
 )
 
 func init() {
@@ -71,16 +84,25 @@ func main() {
 
 	dbMongo := setupst.GetConnect(userMongo, passwordMongo, dbNameMongo)
 
-	// тут инициализация все стореджей
+	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbMongo, "articles")
+	commentStorage := commentst.NewCommentStorage(dbMongo, "comments")
+	councilStorage := councilst.NewCouncilStorage(dbMongo, "council")
+	editionStorage := editionst.NewEditionService(dbMongo, "editions")
 
 	// тут всех сервисов
 	articleService := articlesrv.NewArticleService(articleStorage)
 	authService := authsrv.NewAuthService(adminPassword, loginAdmin, secret, tokenLifetime)
+	commentService := commentsrv.NewCommentsService(commentStorage)
+	councilService := councilsrv.NewCouncilService(councilStorage)
+	editionService := editionsrv.NewEditionService(editionStorage)
 
 	// тут хендлеров
 	articleHandler := articlehand.NewArticleHandler(articleService)
 	authHandler := authand.NewAuthHandler(authService)
+	commentHandler := commentshand.NewCommentsHandler(commentService)
+	councilHandler := councilhand.NewCouncilHandler(councilService)
+	editionHandler := editionhand.NewEditionHandler(editionService)
 
 	router := gin.Default()
 	router.Use(cors.New(config))
@@ -98,6 +120,27 @@ func main() {
 
 	authRouter := router.Group("/admin/auth")
 	authRouter.POST("/login", authHandler.Login)
+
+	commentRouter := router.Group("/comments")
+	commentRouter.GET("/get/all", commentHandler.GetAll)
+	commentRouter.POST("/create", commentHandler.Create)
+	commentRouter.PATCH("/update", commentHandler.Update).Use(authMiddleware)
+	commentRouter.PATCH("/approve", commentHandler.Approve).Use(authMiddleware)
+	commentRouter.DELETE("/delete/:id", commentHandler.Delete).Use(authMiddleware)
+
+	councilRouter := router.Group("/council/members")
+	councilRouter.GET("/get/all", councilHandler.GetAll)
+	councilRouter.GET("/get/:memberId", councilHandler.GetMemberById)
+	councilRouter.POST("/create", councilHandler.Create)
+	councilRouter.PUT("/update/:id", councilHandler.Update)
+	councilRouter.DELETE("/delete/:id", councilHandler.Delete)
+
+	editionRouter := router.Group("/editions")
+	editionRouter.GET("/get/all", editionHandler.GetAllEditions)
+	editionRouter.GET("/get/:editionId", editionHandler.GetEditionById)
+	editionRouter.POST("/create", editionHandler.CreateEdition)
+	editionRouter.PUT("/update", editionHandler.UpdateEdition)
+	editionRouter.DELETE("/delete/:id", editionHandler.DeleteEdition)
 
 	// articleStorage := article.NewArticleStorage(dbMongo, "articles")
 

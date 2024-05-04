@@ -6,7 +6,6 @@ package filepathsrv
 // 	"fmt"
 // 	"os"
 // 	"path/filepath"
-// 	"urfu-radio-journal/pkg/db"
 
 // 	"go.mongodb.org/mongo-driver/bson"
 // 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,7 +14,6 @@ package filepathsrv
 // )
 
 // type FilePathsService struct {
-// 	ctx           *context.Context
 // 	storage       *mongo.Collection
 // 	basePath      string
 // 	directories   map[string]string

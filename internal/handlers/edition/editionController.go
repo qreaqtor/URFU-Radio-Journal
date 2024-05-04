@@ -8,10 +8,10 @@ import (
 )
 
 type service interface {
-	Create(models.EditionCreate) (string, error)
-	GetAll() ([]models.EditionRead, error)
-	Get(string) (models.EditionRead, error)
-	Update(models.EditionUpdate) error
+	Create(*models.EditionCreate) (string, error)
+	GetAll() ([]*models.EditionRead, error)
+	Get(string) (*models.EditionRead, error)
+	Update(*models.EditionUpdate) error
 	Delete(string) error
 }
 
@@ -25,9 +25,9 @@ func NewEditionHandler(edition service) *EditionHandler {
 	}
 }
 
-func (e *EditionHandler) createEdition(ctx *gin.Context) {
-	var edition models.EditionCreate
-	if err := ctx.ShouldBindJSON(&edition); err != nil {
+func (e *EditionHandler) CreateEdition(ctx *gin.Context) {
+	edition := &models.EditionCreate{}
+	if err := ctx.ShouldBindJSON(edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -42,7 +42,7 @@ func (e *EditionHandler) createEdition(ctx *gin.Context) {
 	})
 }
 
-func (e *EditionHandler) getAllEditions(ctx *gin.Context) {
+func (e *EditionHandler) GetAllEditions(ctx *gin.Context) {
 	res, err := e.editions.GetAll()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -54,7 +54,7 @@ func (e *EditionHandler) getAllEditions(ctx *gin.Context) {
 	})
 }
 
-func (e *EditionHandler) getEditionById(ctx *gin.Context) {
+func (e *EditionHandler) GetEditionById(ctx *gin.Context) {
 	editionId := ctx.Param("editionId")
 	edition, err := e.editions.Get(editionId)
 	if err != nil {
@@ -67,9 +67,9 @@ func (e *EditionHandler) getEditionById(ctx *gin.Context) {
 	})
 }
 
-func (e *EditionHandler) updateEdition(ctx *gin.Context) {
-	var edition models.EditionUpdate
-	if err := ctx.ShouldBindJSON(&edition); err != nil {
+func (e *EditionHandler) UpdateEdition(ctx *gin.Context) {
+	edition := &models.EditionUpdate{}
+	if err := ctx.ShouldBindJSON(edition); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -81,7 +81,7 @@ func (e *EditionHandler) updateEdition(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (e *EditionHandler) deleteEdition(ctx *gin.Context) {
+func (e *EditionHandler) DeleteEdition(ctx *gin.Context) {
 	editionId := ctx.Param("id")
 	// edition, err := e.editions.Get(editionIdStr)
 	// if err != nil {
@@ -109,11 +109,11 @@ func (e *EditionHandler) deleteEdition(ctx *gin.Context) {
 // 	return err
 // }
 
-func (e *EditionHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-	publicRg.GET("/get/all", e.getAllEditions)
-	publicRg.GET("/get/:editionId", e.getEditionById)
+// func (e *EditionHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
+// 	publicRg.GET("/get/all", e.getAllEditions)
+// 	publicRg.GET("/get/:editionId", e.getEditionById)
 
-	adminRg.POST("/create", e.createEdition)
-	adminRg.PUT("/update", e.updateEdition)
-	adminRg.DELETE("/delete/:id", e.deleteEdition)
-}
+// 	adminRg.POST("/create", e.createEdition)
+// 	adminRg.PUT("/update", e.updateEdition)
+// 	adminRg.DELETE("/delete/:id", e.deleteEdition)
+// }

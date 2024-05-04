@@ -3,6 +3,7 @@ package commentst
 import (
 	"context"
 	"errors"
+	"fmt"
 	"urfu-radio-journal/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,23 +22,25 @@ func NewCommentStorage(db *mongo.Database, collection string) *CommentsStorage {
 	}
 }
 
-func (cs *CommentsStorage) Create(comment models.CommentCreate) error {
-	_, err := cs.collection.InsertOne(cs.ctx, comment)
-	return err
+func (cs *CommentsStorage) InsertOne(comment *models.CommentCreate) (string, error) {
+	res, err := cs.collection.InsertOne(cs.ctx, comment)
+	id, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("bad inserted id")
+	}
+	return id.Hex(), err
 }
 
-func (cs *CommentsStorage) GetAll(onlyApproved bool, articleIdStr string) ([]*models.CommentRead, error) {
-	filter := bson.M{}
+func (cs *CommentsStorage) GetAll(onlyApproved bool, commentIdStr string) ([]*models.CommentRead, error) {
+	articleId, err := primitive.ObjectIDFromHex(commentIdStr)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{
+		"articleId": articleId,
+	}
 	if onlyApproved {
 		filter = bson.M{"isApproved": true}
-	}
-	if articleIdStr != "" {
-		var articleId primitive.ObjectID
-		articleId, err := primitive.ObjectIDFromHex(articleIdStr)
-		if err != nil {
-			return nil, err
-		}
-		filter["articleId"] = articleId
 	}
 	cur, err := cs.collection.Find(cs.ctx, filter)
 	if err != nil {
@@ -48,7 +51,7 @@ func (cs *CommentsStorage) GetAll(onlyApproved bool, articleIdStr string) ([]*mo
 	return comments, err
 }
 
-func (cs *CommentsStorage) Update(comment models.CommentUpdate) error {
+func (cs *CommentsStorage) UpdateOne(comment *models.CommentUpdate) error {
 	filter := bson.M{"_id": comment.Id}
 	update := bson.M{"$set": comment}
 	res, err := cs.collection.UpdateOne(cs.ctx, filter, update)
@@ -58,9 +61,16 @@ func (cs *CommentsStorage) Update(comment models.CommentUpdate) error {
 	return err
 }
 
-func (cs *CommentsStorage) Delete(id primitive.ObjectID) error {
+func (cs *CommentsStorage) Delete(idStr string) error {
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{"_id": id}
-	_, err := cs.collection.DeleteOne(cs.ctx, filter)
+	res, err := cs.collection.DeleteOne(cs.ctx, filter)
+	if res.DeletedCount != 1 {
+		return fmt.Errorf("deleted count was %d, baut want 1", res.DeletedCount)
+	}
 	return err
 }
 
