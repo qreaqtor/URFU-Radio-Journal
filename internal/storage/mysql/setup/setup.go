@@ -1,27 +1,23 @@
-package setup
+package setupst
 
 import (
 	"database/sql"
 	"fmt"
 )
 
-func GetConnection(dbUser, dbPassword, addr, dbName string) (*sql.DB, error) {
-	// основные настройки к базе
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?", dbUser, dbPassword, addr, dbName)
-	// указываем кодировку
-	dsn += "&charset=utf8"
-	// отказываемся от prapared statements
-	// параметры подставляются сразу
-	dsn += "&interpolateParams=true"
+func GetConnect(user, password, host, port, dbName string) (*sql.DB, error) {
+	connStr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		user, password, host, port, dbName)
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while connecting to PostgreSQL: %v", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while trying to ping PostgreSQL: %v", err)
 	}
+
 	return db, nil
 }

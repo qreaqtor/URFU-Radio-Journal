@@ -86,9 +86,9 @@ func (cs *CommentsService) Approve(commentApprove *models.CommentApprove) error 
 	if err != nil {
 		return err
 	}
-	contentField := "content.Ru"
+	contentField := "content_ru"
 	if unicodeRange == unicode.Latin {
-		contentField = "content.Eng"
+		contentField = "content_en"
 	}
 	return cs.repo.Approve(commentApprove, contentField)
 }

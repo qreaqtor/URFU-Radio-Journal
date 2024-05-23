@@ -2,31 +2,32 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type EditionCreate struct {
-	Title       text               `json:"title" bson:"title" binding:"required"`
-	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
-	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
-	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"-"`
-	Date        time.Time          `json:"date" bson:"date" binding:"required"`
+	Year        int       `json:"year" bson:"year" binding:"required"`
+	Number      int       `json:"number" bson:"number" binding:"required"`
+	Volume      int       `json:"volume" bson:"volume" binding:"required"`
+	FilePathId  string    `json:"filePathId" bson:"filePathId" binding:"required"`
+	CoverPathId string    `json:"coverPathId" bson:"coverPathId" binding:"required"`
+	Date        time.Time `json:"date" bson:"date" binding:"required"`
 }
 
 type EditionRead struct {
-	Id          primitive.ObjectID `json:"id" bson:"_id" binding:"required"`
-	Title       text               `json:"title" bson:"title" binding:"required"`
-	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId" binding:"required"`
-	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId" binding:"required"`
-	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId" binding:"required"`
-	Date        time.Time          `json:"date" bson:"date" binding:"required"`
+	Id          int       `json:"id" bson:"_id" binding:"required"`
+	Year        int       `json:"year" bson:"year" binding:"required"`
+	Number      int       `json:"number" bson:"number" binding:"required"`
+	Volume      int       `json:"volume" bson:"volume" binding:"required"`
+	FilePathId  string    `json:"filePathId" bson:"filePathId" binding:"required"`
+	CoverPathId string    `json:"coverPathId" bson:"coverPathId" binding:"required"`
+	Date        time.Time `json:"date" bson:"date" binding:"required"`
 }
 
 type EditionUpdate struct {
-	Id          primitive.ObjectID `json:"id" binding:"required"`
-	Title       text               `json:"title" bson:"title,omitempty" binding:"-"`
-	FilePathId  primitive.ObjectID `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
-	CoverPathId primitive.ObjectID `json:"coverPathId" bson:"coverPathId,omitempty" binding:"-"`
-	VideoPathId primitive.ObjectID `json:"videoPathId" bson:"videoPathId,omitempty" binding:"-"`
+	Id          int    `json:"id" binding:"required"`
+	Year        int    `json:"year" bson:"year,omitempty" binding:"-"`
+	Number      int    `json:"number" bson:"number,omitempty" binding:"-"`
+	Volume      int    `json:"volume" bson:"volume,omitempty" binding:"-"`
+	FilePathId  string `json:"filePathId" bson:"filePathId,omitempty" binding:"-"`
+	CoverPathId string `json:"coverPathId" bson:"coverPathId,omitempty" binding:"-"`
 }
