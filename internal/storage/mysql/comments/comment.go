@@ -55,7 +55,7 @@ func (cs *CommentsStorage) GetAll(onlyApproved bool, articleIdStr string) ([]*mo
 }
 
 func (cs *CommentsStorage) UpdateOne(comment *models.CommentUpdate) error {
-	_, err := cs.db.Exec("UPDATE comments SET content_ru = $1, content_en = %2 WHERE comment_id = $3", comment.Content.Ru, comment.Content.Eng, comment.Id)
+	_, err := cs.db.Exec("UPDATE comments SET content_ru = $1, content_en = $2 WHERE comment_id = $3", comment.Content.Ru, comment.Content.Eng, comment.Id)
 	if err != nil {
 		return err
 	}

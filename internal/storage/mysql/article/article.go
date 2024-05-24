@@ -45,7 +45,11 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 			return "", err
 		}
 
-		_, err = a.db.Exec("INSERT INTO authors_articles (article, author) VALUES ($1, $2)", articleID, authorID)
+		_, err = a.db.Exec(
+			"INSERT INTO authors_articles (article, author) VALUES ($1, $2)",
+			articleID,
+			authorID,
+		)
 		if err != nil {
 			return "", err
 		}
@@ -238,7 +242,8 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 		keywordsEn = append(keywordsEn, keyword.Eng)
 	}
 
-	_, err := as.db.Exec(query,
+	_, err := as.db.Exec(
+		query,
 		&newArticle.Id,
 		&newArticle.Title.Ru,
 		&newArticle.Title.Eng,
