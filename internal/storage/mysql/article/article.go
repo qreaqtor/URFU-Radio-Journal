@@ -27,20 +27,43 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 		keywordsEn = append(keywordsEn, keyword.Eng)
 	}
 
-	var articleID int
-	err := a.db.QueryRow("INSERT INTO articles (edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING article_id;",
-		article.EditionId, article.Title.Ru, article.Title.Eng, article.Content.Ru, article.Content.Eng,
-		pq.Array(keywordsRu), pq.Array(keywordsEn), article.FilePathId, article.VideoPathId, pq.Array(article.Literature),
-		article.Reference.Ru, article.Reference.Eng, article.DateReceipt, article.DateAcceptance, article.DOI).Scan(&articleID)
+	query := "INSERT INTO articles (edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING article_id;"
+	row := a.db.QueryRow(
+		query,
+		article.EditionId,
+		article.Title.Ru,
+		article.Title.Eng,
+		article.Content.Ru,
+		article.Content.Eng,
+		pq.Array(keywordsRu),
+		pq.Array(keywordsEn),
+		article.FilePathId,
+		article.VideoPathId,
+		pq.Array(article.Literature),
+		article.Reference.Ru,
+		article.Reference.Eng,
+		article.DateReceipt,
+		article.DateAcceptance,
+		article.DOI,
+	)
 
+	var articleID int
+	err := row.Scan(&articleID)
 	if err != nil {
 		return "", err
 	}
 
 	for _, author := range article.Authors {
+		row = a.db.QueryRow(
+			"INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
+			author.FullName.Ru,
+			author.FullName.Eng,
+			author.Affilation,
+			author.Email,
+		)
+
 		var authorID int
-		err = a.db.QueryRow("INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
-			author.FullName.Ru, author.FullName.Eng, author.Affilation, author.Email).Scan(&authorID)
+		err := row.Scan(&authorID)
 		if err != nil {
 			return "", err
 		}
@@ -59,7 +82,8 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 }
 
 func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) {
-	rows, err := as.db.Query("SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE edition_id = $1", editionID)
+	query := "SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE edition_id = $1"
+	rows, err := as.db.Query(query, editionID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,30 +150,32 @@ func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) 
 }
 
 func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, error) {
-	article := &models.ArticleRead{}
 	var keywordsRu pq.StringArray
 	var keywordsEn pq.StringArray
 	var literatureArray pq.StringArray
 
-	err := as.db.QueryRow("SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE article_id = $1", articleIdStr).
-		Scan(
-			&article.Id,
-			&article.EditionId,
-			&article.Title.Ru,
-			&article.Title.Eng,
-			&article.Content.Ru,
-			&article.Content.Eng,
-			&keywordsRu,
-			&keywordsEn,
-			&article.FilePathId,
-			&article.VideoPathId,
-			&literatureArray,
-			&article.Reference.Ru,
-			&article.Reference.Eng,
-			&article.DateReceipt,
-			&article.DateAcceptance,
-			&article.DOI,
-		)
+	query := "SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE article_id = $1"
+	row := as.db.QueryRow(query, articleIdStr)
+
+	article := &models.ArticleRead{}
+	err := row.Scan(
+		&article.Id,
+		&article.EditionId,
+		&article.Title.Ru,
+		&article.Title.Eng,
+		&article.Content.Ru,
+		&article.Content.Eng,
+		&keywordsRu,
+		&keywordsEn,
+		&article.FilePathId,
+		&article.VideoPathId,
+		&literatureArray,
+		&article.Reference.Ru,
+		&article.Reference.Eng,
+		&article.DateReceipt,
+		&article.DateAcceptance,
+		&article.DOI,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -191,9 +217,10 @@ func (as *ArticleStorage) Delete(IdStr string) error {
 }
 
 func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
-	var filePathId string
+	row := as.db.QueryRow("SELECT file_path FROM articles WHERE id = $1", idStr)
 
-	err := as.db.QueryRow("SELECT file_path FROM articles WHERE id = $1", idStr).Scan(&filePathId)
+	var filePathId string
+	err := row.Scan(&filePathId)
 	if err != nil {
 		return "", err
 	}
@@ -202,9 +229,10 @@ func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
 }
 
 func (as *ArticleStorage) GetVideoPathId(idStr string) (string, error) {
-	var filePathId string
+	row := as.db.QueryRow("SELECT video_path FROM articles WHERE id = $1", idStr)
 
-	err := as.db.QueryRow("SELECT video_path FROM articles WHERE id = $1", idStr).Scan(&filePathId)
+	var filePathId string
+	err := row.Scan(&filePathId)
 	if err != nil {
 		return "", err
 	}
@@ -213,27 +241,6 @@ func (as *ArticleStorage) GetVideoPathId(idStr string) (string, error) {
 }
 
 func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
-	query := `
-        UPDATE articles
-        SET
-		title_ru = $2, 
-		title_en = $3, 
-		content_ru = $4, 
-		content_en = $5, 
-		keywords_ru = $6, 
-		keywords_en = $7, 
-		file_path = $8, 
-		video_path = $9, 
-		literature = $10, 
-		reference_ru = $11, 
-		reference_en = $12, 
-		date_receipt = $13, 
-		date_acceptance = $14, 
-		doi = $15
-        WHERE
-            article_id = $1
-    `
-
 	var keywordsRu []string
 	var keywordsEn []string
 
@@ -242,6 +249,26 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 		keywordsEn = append(keywordsEn, keyword.Eng)
 	}
 
+	query := `
+	UPDATE articles
+	SET
+	title_ru = $2, 
+	title_en = $3, 
+	content_ru = $4, 
+	content_en = $5, 
+	keywords_ru = $6, 
+	keywords_en = $7, 
+	file_path = $8, 
+	video_path = $9, 
+	literature = $10, 
+	reference_ru = $11, 
+	reference_en = $12, 
+	date_receipt = $13, 
+	date_acceptance = $14, 
+	doi = $15
+	WHERE
+		article_id = $1
+`
 	_, err := as.db.Exec(
 		query,
 		&newArticle.Id,
@@ -270,9 +297,15 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 	}
 
 	for _, author := range newArticle.Authors {
+		row := as.db.QueryRow("INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
+			author.FullName.Ru,
+			author.FullName.Eng,
+			author.Affilation,
+			author.Email,
+		)
+
 		var authorID int
-		err = as.db.QueryRow("INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
-			author.FullName.Ru, author.FullName.Eng, author.Affilation, author.Email).Scan(&authorID)
+		err = row.Scan(&authorID)
 		if err != nil {
 			return err
 		}
