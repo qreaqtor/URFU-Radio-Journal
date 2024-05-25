@@ -57,7 +57,7 @@ func init() {
 
 	dbUser = os.Getenv("DB_USER")
 	dbPassword = os.Getenv("DB_PASSWORD")
-	addr = os.Getenv("DB_ADDRES")
+	addr = os.Getenv("DB_ADDRESS")
 	dbName = os.Getenv("DB_NAME")
 	dbPort = os.Getenv("DB_PORT")
 
@@ -84,19 +84,22 @@ func init() {
 }
 
 func main() {
+	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, addr, dbPort, dbName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{frontend, "http://localhost:3000"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
 	config.AddAllowHeaders("Authorization", "Cookie")
 
-	dbPostgres, _ := setupst.GetConnect(dbUser, dbPassword, addr, dbPort, dbName)
-
 	// тут инициализация всех стореджей
-	articleStorage := articlest.NewArticleStorage(dbPostgres)
+	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
 	commentStorage := commentst.NewCommentStorage(dbPostgres)
 	councilStorage := councilst.NewCouncilStorage(dbPostgres)
-	editionStorage := editionst.NewEditionStorage(dbPostgres)
+	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
 	redactionStorage := redactionst.NewRedactionStorage(dbPostgres)
 
 	// тут всех сервисов

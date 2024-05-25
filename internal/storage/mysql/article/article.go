@@ -2,6 +2,7 @@ package articlest
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"urfu-radio-journal/internal/models"
 
@@ -9,16 +10,31 @@ import (
 )
 
 type ArticleStorage struct {
-	db *sql.DB
+	db    *sql.DB
+	table string
 }
 
-func NewArticleStorage(db *sql.DB) *ArticleStorage {
+func NewArticleStorage(db *sql.DB, table string) *ArticleStorage {
 	return &ArticleStorage{
-		db: db,
+		db:    db,
+		table: table,
 	}
 }
 
-func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error) {
+func getColumns() string {
+	return "edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi"
+}
+
+func generateValuesID(count int) string {
+	res := ""
+	for i := 1; i < count; i++ {
+		res += fmt.Sprintf("$%v, ", i)
+	}
+	res += fmt.Sprintf("$%v", count)
+	return res
+}
+
+func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error) {
 	var keywordsRu []string
 	var keywordsEn []string
 
@@ -27,8 +43,13 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 		keywordsEn = append(keywordsEn, keyword.Eng)
 	}
 
-	query := "INSERT INTO articles (edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING article_id;"
-	row := a.db.QueryRow(
+	query := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s) RETURNING article_id;",
+		as.table,
+		getColumns(),
+		generateValuesID(15),
+	)
+	row := as.db.QueryRow(
 		query,
 		article.EditionId,
 		article.Title.Ru,
@@ -54,8 +75,9 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 	}
 
 	for _, author := range article.Authors {
-		row = a.db.QueryRow(
-			"INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
+		query := "INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id"
+		row = as.db.QueryRow(
+			query,
 			author.FullName.Ru,
 			author.FullName.Eng,
 			author.Affilation,
@@ -68,7 +90,7 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 			return "", err
 		}
 
-		_, err = a.db.Exec(
+		_, err = as.db.Exec(
 			"INSERT INTO authors_articles (article, author) VALUES ($1, $2)",
 			articleID,
 			authorID,
@@ -82,7 +104,11 @@ func (a *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error
 }
 
 func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) {
-	query := "SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE edition_id = $1"
+	query := fmt.Sprintf(
+		"SELECT article_id, %s FROM %s WHERE edition_id = $1",
+		getColumns(),
+		as.table,
+	)
 	rows, err := as.db.Query(query, editionID)
 	if err != nil {
 		return nil, err
@@ -154,7 +180,11 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 	var keywordsEn pq.StringArray
 	var literatureArray pq.StringArray
 
-	query := "SELECT article_id, edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi FROM articles WHERE article_id = $1"
+	query := fmt.Sprintf(
+		"SELECT article_id, %s FROM %s WHERE article_id = $1",
+		getColumns(),
+		as.table,
+	)
 	row := as.db.QueryRow(query, articleIdStr)
 
 	article := &models.ArticleRead{}
@@ -204,7 +234,11 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 }
 
 func (as *ArticleStorage) Delete(IdStr string) error {
-	_, err := as.db.Exec("DELETE FROM articles WHERE article_id = $1", IdStr)
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE article_id = $1",
+		as.table,
+	)
+	_, err := as.db.Exec(query, IdStr)
 	if err != nil {
 		return err
 	}
@@ -217,7 +251,11 @@ func (as *ArticleStorage) Delete(IdStr string) error {
 }
 
 func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
-	row := as.db.QueryRow("SELECT file_path FROM articles WHERE id = $1", idStr)
+	query := fmt.Sprintf(
+		"SELECT file_path FROM %s WHERE id = $1",
+		as.table,
+	)
+	row := as.db.QueryRow(query, idStr)
 
 	var filePathId string
 	err := row.Scan(&filePathId)
@@ -229,7 +267,11 @@ func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
 }
 
 func (as *ArticleStorage) GetVideoPathId(idStr string) (string, error) {
-	row := as.db.QueryRow("SELECT video_path FROM articles WHERE id = $1", idStr)
+	query := fmt.Sprintf(
+		"SELECT video_path FROM %s WHERE id = $1",
+		as.table,
+	)
+	row := as.db.QueryRow(query, idStr)
 
 	var filePathId string
 	err := row.Scan(&filePathId)
@@ -320,7 +362,8 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 }
 
 func (as *ArticleStorage) getAuthorsByArticleID(articleID int) ([]models.Author, error) {
-	rows, err := as.db.Query("SELECT fullname_ru, fullname_en, affiliation, email FROM authors WHERE author_id IN (SELECT author FROM authors_articles WHERE article = $1)", articleID)
+	query := "SELECT fullname_ru, fullname_en, affiliation, email FROM authors WHERE author_id IN (SELECT author FROM authors_articles WHERE article = $1)"
+	rows, err := as.db.Query(query, articleID)
 	if err != nil {
 		return nil, err
 	}
