@@ -67,7 +67,7 @@ func (cs *CouncilStorage) GetImagePathId(idStr string) (string, error) {
 	var member models.CouncilMemberRead
 	filter := bson.M{"_id": id}
 	err = cs.collection.FindOne(cs.ctx, filter).Decode(&member)
-	return member.ImagePathId.Hex(), err
+	return member.ImagePathId, err
 }
 
 func (cs *CouncilStorage) GetAll() ([]*models.CouncilMemberRead, error) {

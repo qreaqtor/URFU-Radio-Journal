@@ -86,7 +86,7 @@ func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
 	if err != nil {
 		return "", nil
 	}
-	return article.FilePathId.Hex(), nil
+	return article.FilePathId, nil
 }
 
 func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
