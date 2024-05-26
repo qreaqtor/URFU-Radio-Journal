@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:alpine3.20
+    environment:
+      POSTGRES_USER: 'testuser'
+      POSTGRES_PASSWORD: 'testpass'
+      POSTGRES_DB: 'radio_journal'
+    ports:
+      - '5432:5432'
+    volumes:
+      - './internal/storage/postgres/_sql/:/docker-entrypoint-initdb.d/'
+
+  radiojournal:
+    build: ./

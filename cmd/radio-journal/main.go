@@ -19,12 +19,12 @@ import (
 	councilsrv "urfu-radio-journal/internal/services/council"
 	editionsrv "urfu-radio-journal/internal/services/edition"
 	redactionsrv "urfu-radio-journal/internal/services/redaction"
-	articlest "urfu-radio-journal/internal/storage/mysql/article"
-	commentst "urfu-radio-journal/internal/storage/mysql/comments"
-	councilst "urfu-radio-journal/internal/storage/mysql/council"
-	editionst "urfu-radio-journal/internal/storage/mysql/edition"
-	redactionst "urfu-radio-journal/internal/storage/mysql/redaction"
-	setupst "urfu-radio-journal/internal/storage/mysql/setup"
+	articlest "urfu-radio-journal/internal/storage/postgres/article"
+	commentst "urfu-radio-journal/internal/storage/postgres/comments"
+	councilst "urfu-radio-journal/internal/storage/postgres/council"
+	editionst "urfu-radio-journal/internal/storage/postgres/edition"
+	redactionst "urfu-radio-journal/internal/storage/postgres/redaction"
+	setupst "urfu-radio-journal/internal/storage/postgres/setup"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -33,8 +33,6 @@ import (
 
 // для этого надо завести отдельный файл с конфигами
 var (
-	// userMongo, passwordMongo, dbNameMongo string
-
 	adminPassword, loginAdmin, secret string
 	tokenLifetime                     int
 
@@ -42,7 +40,7 @@ var (
 
 	port string
 
-	dbUser, dbPassword, addr, dbName, dbPort string
+	dbUser, dbPassword, dbHost, dbName, dbPort string
 )
 
 func init() {
@@ -51,20 +49,14 @@ func init() {
 		log.Fatal(err)
 	}
 
-	// userMongo = os.Getenv("MONGO_USER")
-	// passwordMongo = os.Getenv("MONGO_PASSWORD")
-	// dbNameMongo = os.Getenv("DB_NAME")
-
 	dbUser = os.Getenv("DB_USER")
 	dbPassword = os.Getenv("DB_PASSWORD")
-	addr = os.Getenv("DB_ADDRESS")
+	dbHost = os.Getenv("DB_HOST")
 	dbName = os.Getenv("DB_NAME")
 	dbPort = os.Getenv("DB_PORT")
 
 	adminPassword = os.Getenv("ADMIN_PASSWORD")
-	// if passwordMongo == "" {
-	// 	log.Fatal("Missing admin password in environvent variables.")
-	// }
+
 	loginAdmin = os.Getenv("ADMIN_LOGIN")
 	if loginAdmin == "" {
 		log.Fatal("Missing admin username in environvent variables.")
@@ -84,7 +76,7 @@ func init() {
 }
 
 func main() {
-	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, addr, dbPort, dbName)
+	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbPort, dbName)
 	if err != nil {
 		log.Fatal(err)
 	}
