@@ -8,6 +8,13 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+var (
+	errBadPass    = errors.New("invalid password")
+	errBadToken   = errors.New("bad token")
+	errNoPayload  = errors.New("no payload")
+	errBadPayload = errors.New("wrong value type in payload")
+)
+
 type AuthService struct {
 	admin         models.Admin
 	tokenLifetime time.Duration
@@ -29,19 +36,19 @@ func (as *AuthService) checkAdmin(admin models.Admin) bool {
 	return admin.Username == as.admin.Username && admin.Password == as.admin.Password
 }
 
-func (as *AuthService) Login(admin models.Admin) (token string, err error) {
+func (as *AuthService) Login(admin models.Admin) (string, error) {
 	if as.checkAdmin(admin) {
-		token, err = as.createToken(admin)
-		return
+		return as.createToken(admin)
 	}
-	err = errors.New("check login or password")
-	return
+	return "", errBadPass
 }
 
 func (as *AuthService) createToken(admin models.Admin) (string, error) {
+	iat := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": admin.Username,
-		"exp":      time.Now().Add(time.Hour * as.tokenLifetime).Unix(), // Время жизни токена
+		"iat":      iat.Unix(),
+		"exp":      iat.Add(time.Hour * as.tokenLifetime).Unix(), // Время жизни токена
 	})
 	tokenString, err := token.SignedString(as.secret)
 	if err != nil {
@@ -51,17 +58,31 @@ func (as *AuthService) createToken(admin models.Admin) (string, error) {
 	return tokenString, nil
 }
 
-func (as *AuthService) ValidateToken(tokenString string) error {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func (as *AuthService) ValidateToken(tokenIn string) error {
+	hashSecretGetter := func(token *jwt.Token) (interface{}, error) {
+		method, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok || method.Alg() != "HS256" {
+			return nil, errBadToken
+		}
 		return as.secret, nil
-	})
-	if err != nil {
+	}
+	token, err := jwt.Parse(tokenIn, hashSecretGetter)
+	if err != nil || !token.Valid {
 		return err
 	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if _, exists := claims["username"].(string); exists {
-			return nil
-		}
+
+	payload, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errNoPayload
 	}
-	return errors.New("invalid token")
+
+	username, ok := payload["username"].(string)
+	if !ok {
+		return errBadPayload
+	}
+
+	if as.admin.Username != username {
+		return errBadToken
+	}
+	return nil
 }

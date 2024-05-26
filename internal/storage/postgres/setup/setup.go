@@ -7,14 +7,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func GetConnect(user, password, host, port, dbName string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		user,
-		password,
+func GetConnect(user, password, host, dbName string, port int) (*sql.DB, error) {
+	connStr := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host,
 		port,
+		user,
+		password,
 		dbName,
 	)
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to PostgreSQL: %v", err)

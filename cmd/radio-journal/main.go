@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -38,9 +41,10 @@ var (
 
 	frontend string
 
-	port string
+	port int
 
-	dbUser, dbPassword, dbHost, dbName, dbPort string
+	dbUser, dbPassword, dbHost, dbName string
+	dbPort                             int
 )
 
 func init() {
@@ -53,7 +57,10 @@ func init() {
 	dbUser = os.Getenv("DB_USER")
 	dbHost = os.Getenv("DB_HOST")
 	dbName = os.Getenv("DB_NAME")
-	dbPort = os.Getenv("DB_PORT")
+	dbPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
+	if err != nil {
+		log.Fatal("Can't parse dbPort.")
+	}
 
 	adminPassword = os.Getenv("ADMIN_PASSWORD")
 	if adminPassword == "" {
@@ -77,17 +84,26 @@ func init() {
 
 	frontend = os.Getenv("FRONTEND_ADRESS")
 
-	port = os.Getenv("PORT")
+	port, err = strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		log.Fatal("Can't parse port.")
+	}
 }
 
 func main() {
-	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbPort, dbName)
+	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(dbPostgres)
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{frontend, "http://localhost:3000"}
+	config.AllowOrigins = []string{frontend}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
 	config.AddAllowHeaders("Authorization", "Cookie")
@@ -117,7 +133,6 @@ func main() {
 
 	router := gin.Default()
 	router.Use(cors.New(config))
-	router.Use(middleware.PanicMiddleware()) // не уверен что тут надо это, но пусть пока что будет
 
 	authMiddleware := middleware.AuthMiddleware(authService.ValidateToken)
 
@@ -135,6 +150,7 @@ func main() {
 	commentRouter := router.Group("/comments")
 	commentRouter.GET("/get/all", commentHandler.GetAll)
 	commentRouter.POST("/create", commentHandler.Create)
+
 	commentRouter.PATCH("/update", commentHandler.Update).Use(authMiddleware)
 	commentRouter.PATCH("/approve", commentHandler.Approve).Use(authMiddleware)
 	commentRouter.DELETE("/delete/:id", commentHandler.Delete).Use(authMiddleware)
@@ -142,69 +158,47 @@ func main() {
 	councilRouter := router.Group("/council/members")
 	councilRouter.GET("/get/all", councilHandler.GetAll)
 	councilRouter.GET("/get/:memberId", councilHandler.GetMemberById)
-	councilRouter.POST("/create", councilHandler.Create)
-	councilRouter.PUT("/update/:id", councilHandler.Update)
-	councilRouter.DELETE("/delete/:id", councilHandler.Delete)
+
+	councilRouter.POST("/create", councilHandler.Create).Use(authMiddleware)
+	councilRouter.PUT("/update/:id", councilHandler.Update).Use(authMiddleware)
+	councilRouter.DELETE("/delete/:id", councilHandler.Delete).Use(authMiddleware)
 
 	editionRouter := router.Group("/editions")
 	editionRouter.GET("/get/all", editionHandler.GetAllEditions)
 	editionRouter.GET("/get/:editionId", editionHandler.GetEditionById)
-	editionRouter.POST("/create", editionHandler.CreateEdition)
-	editionRouter.PUT("/update", editionHandler.UpdateEdition)
-	editionRouter.DELETE("/delete/:id", editionHandler.DeleteEdition)
+	editionRouter.POST("/create", editionHandler.CreateEdition).Use(authMiddleware)
+	editionRouter.PUT("/update", editionHandler.UpdateEdition).Use(authMiddleware)
+	editionRouter.DELETE("/delete/:id", editionHandler.DeleteEdition).Use(authMiddleware)
 
 	redactionRouter := router.Group("/redaction/members")
 	redactionRouter.GET("/get/all", redactionHandler.GetAll)
 	redactionRouter.GET("/get/:memberId", redactionHandler.GetMemberById)
-	redactionRouter.POST("/create", redactionHandler.Create)
-	redactionRouter.PUT("/update/:id", redactionHandler.Update)
-	redactionRouter.DELETE("/delete/:id", redactionHandler.Delete)
+	redactionRouter.POST("/create", redactionHandler.Create).Use(authMiddleware)
+	redactionRouter.PUT("/update/:id", redactionHandler.Update).Use(authMiddleware)
+	redactionRouter.DELETE("/delete/:id", redactionHandler.Delete).Use(authMiddleware)
 
-	// articleStorage := article.NewArticleStorage(dbMongo, "articles")
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: router.Handler(),
+	}
 
-	// authPath := router.Group("/admin/auth")
-	// authHandler := auth.NewAuthHandler()
-	// authHandler.RegisterRoutes(authPath)
+	ctx, cancel := context.WithCancel(context.Background())
 
-	// publicFilesPath := router.Group("/files")
+	go func(ctx context.Context, srv *http.Server) {
+		<-ctx.Done()
+		err := server.Shutdown(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(ctx, server)
 
-	// adminFilesPath := router.Group("/admin/files")
-	// adminFilesPath.Use(authHandler.AuthMiddleware())
+	go func(cancel context.CancelFunc) {
+		fmt.Scanln()
+		cancel()
+	}(cancel)
 
-	// files := filePaths.NewFilesController()
-	// files.RegisterRoutes(publicFilesPath, adminFilesPath)
-
-	// publicCommentsPath := router.Group("/comments")
-
-	// adminCommentsPath := router.Group("/admin/comments")
-	// adminCommentsPath.Use(authHandler.AuthMiddleware())
-
-	// comments := comments.NewCommentsController()
-	// comments.RegisterRoutes(publicCommentsPath, adminCommentsPath)
-
-	// publicArticlePath := router.Group("/articles")
-
-	// adminArticlePath := router.Group("/admin/articles")
-	// adminArticlePath.Use(authHandler.AuthMiddleware())
-
-	// articleHandler := article.NewArticleController()
-	// articleHandler.RegisterRoutes(publicArticlePath, adminArticlePath)
-
-	// publicEditionPath := router.Group("/editions")
-
-	// adminEditionPath := router.Group("/admin/editions")
-	// adminEditionPath.Use(authHandler.AuthMiddleware())
-
-	// edition := edition.NewEditionController(files.GetDeleteHandler(), articleHandler.GetDeleteHandler())
-	// edition.RegisterRoutes(publicEditionPath, adminEditionPath)
-
-	// councilPublicPath := router.Group("/council/members")
-
-	// councilAdminPath := router.Group("/admin/council/members")
-	// councilAdminPath.Use(authHandler.AuthMiddleware())
-
-	// council := council.NewCouncilController(files.GetDeleteHandler())
-	// council.RegisterRoutes(councilPublicPath, councilAdminPath)
-
-	log.Fatal(router.Run(fmt.Sprintf(":%s", port)))
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
