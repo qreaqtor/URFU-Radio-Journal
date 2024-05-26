@@ -1,27 +1,21 @@
 package setupst
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 
-	"github.com/jackc/pgx"
+	_ "github.com/lib/pq"
 )
 
 func GetConnect(user, password, host, port, dbName string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		user,
 		password,
-		host+":"+port,
+		host,
 		port,
 		dbName,
 	)
-	ctx := context.Background()
-	conn, err := pgx.Connect(ctx, connStr)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to connect to database: %v\n", err)
-	}
-	defer conn.Close()
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to PostgreSQL: %v", err)
 	}

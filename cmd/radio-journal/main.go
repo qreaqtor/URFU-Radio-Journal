@@ -33,7 +33,7 @@ import (
 
 // для этого надо завести отдельный файл с конфигами
 var (
-	adminPassword, loginAdmin, secret string
+	adminPassword, adminLogin, secret string
 	tokenLifetime                     int
 
 	frontend string
@@ -49,22 +49,27 @@ func init() {
 		log.Fatal(err)
 	}
 
-	dbUser = os.Getenv("DB_USER")
 	dbPassword = os.Getenv("DB_PASSWORD")
+	dbUser = os.Getenv("DB_USER")
 	dbHost = os.Getenv("DB_HOST")
 	dbName = os.Getenv("DB_NAME")
 	dbPort = os.Getenv("DB_PORT")
 
 	adminPassword = os.Getenv("ADMIN_PASSWORD")
-
-	loginAdmin = os.Getenv("ADMIN_LOGIN")
-	if loginAdmin == "" {
-		log.Fatal("Missing admin username in environvent variables.")
+	if adminPassword == "" {
+		log.Fatal("Missing admin password in environment variables.")
 	}
+
+	adminLogin = os.Getenv("ADMIN_LOGIN")
+	if adminLogin == "" {
+		log.Fatal("Missing admin username in environment variables.")
+	}
+
 	tokenLifetime, err = strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
 	if err != nil {
 		log.Fatal("Can't parse token lifetime.")
 	}
+
 	secret = os.Getenv("SECRET")
 	if secret == "" {
 		log.Fatal("Missing secret in environvent variables.")
@@ -96,7 +101,7 @@ func main() {
 
 	// тут всех сервисов
 	articleService := articlesrv.NewArticleService(articleStorage)
-	authService := authsrv.NewAuthService(adminPassword, loginAdmin, secret, tokenLifetime)
+	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)
 	editionService := editionsrv.NewEditionService(editionStorage)
