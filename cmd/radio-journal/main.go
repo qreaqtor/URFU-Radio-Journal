@@ -27,7 +27,7 @@ import (
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
 	redactionst "urfu-radio-journal/internal/storage/postgres/redaction"
-	setupst "urfu-radio-journal/internal/storage/postgres/setup"
+	postgrest "urfu-radio-journal/internal/storage/postgres/setup"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -90,7 +90,7 @@ func init() {
 }
 
 func main() {
-	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, 5)
+	dbPostgres, err := postgrest.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, 5)
 	if err != nil {
 		log.Fatal(err)
 	}

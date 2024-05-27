@@ -1,4 +1,95 @@
-package filepathsrv
+package filesrv
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"urfu-radio-journal/internal/models"
+)
+
+var (
+	errBadContentType = errors.New("bad Content-Type")
+)
+
+type UploadFileFunc func(context.Context, *models.FileUnit) error
+
+type fileRepo interface {
+	UploadFile(context.Context, *models.FileUnit) error
+	DeleteFile(context.Context, string) error
+}
+
+type fileInfo interface {
+	InsertOne(*models.FileInfo) (string, error)
+	DeleteOne(string) error
+	FindOne(string) (*models.FileInfo, error)
+	UpdateOne(string) error
+}
+
+type FileService struct {
+	videos    fileRepo
+	documents fileRepo
+	images    fileRepo
+	files     fileInfo
+}
+
+func NewFileService(videos, documents, images fileRepo, files fileInfo) *FileService {
+	return &FileService{
+		videos:    videos,
+		documents: documents,
+		images:    images,
+		files:     files,
+	}
+}
+
+func (f *FileService) getUploadFunc(fileContentType string) (UploadFileFunc, error) {
+	switch fileContentType {
+	case "video/mp4":
+		return f.videos.UploadFile, nil
+	case "image/jpeg":
+		return f.images.UploadFile, nil
+	case "application/pdf":
+		return f.documents.UploadFile, nil
+	}
+	return nil, errBadContentType
+}
+
+func (f *FileService) Create(ctx context.Context, file *models.FileUnit) (string, error) {
+	upload, err := f.getUploadFunc(file.Info.ContentType)
+	if err != nil {
+		return "", err
+	}
+
+	id, err := f.files.InsertOne(file.Info)
+	if err != nil {
+		return "", err
+	}
+
+	file.PayloadID = id
+
+	err = upload(ctx, file)
+	if err != nil {
+		err2 := f.files.DeleteOne(id)
+		if err2 != nil {
+			return "", fmt.Errorf("%v; %v", err, err2)
+		}
+		return "", err
+	}
+
+	return file.PayloadID, nil
+}
+
+func (f *FileService) Get(ctx context.Context, id string) error {
+	return nil
+}
+
+func (f *FileService) Update(ctx context.Context, id string) error {
+	return nil
+}
+
+func (f *FileService) Delete(ctx context.Context, fileName string) error {
+	err := f.videos.DeleteFile(ctx, fileName)
+	return err
+}
 
 // import (
 // 	"context"

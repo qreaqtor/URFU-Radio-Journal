@@ -1,4 +1,4 @@
-package setupst
+package postgrest
 
 import (
 	"database/sql"
@@ -36,10 +36,6 @@ func GetConnect(user, password, host, dbName string, port, tryConn int) (*sql.DB
 	if err != nil {
 		return nil, fmt.Errorf("error while trying to ping PostgreSQL: %v", err)
 	}
-	// err = db.Ping()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error while trying to ping PostgreSQL: %v", err)
-	// }
 
 	fmt.Println("Success connection to PostgreSQL!")
 	return db, nil
