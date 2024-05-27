@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	articlehand "urfu-radio-journal/internal/handlers/article"
 	authand "urfu-radio-journal/internal/handlers/auth"
@@ -39,7 +39,7 @@ var (
 	adminPassword, adminLogin, secret string
 	tokenLifetime                     int
 
-	frontend string
+	origins []string
 
 	port int
 
@@ -50,48 +50,51 @@ var (
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	dbPassword = os.Getenv("DB_PASSWORD")
 	dbUser = os.Getenv("DB_USER")
 	dbHost = os.Getenv("DB_HOST")
 	dbName = os.Getenv("DB_NAME")
-	dbPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
+	dbPort, err = strconv.Atoi(strings.TrimSpace(os.Getenv("DB_PORT")))
 	if err != nil {
-		log.Fatal("Can't parse dbPort.")
+		log.Fatal("Can't parse dbPort: ", err)
 	}
 
 	adminPassword = os.Getenv("ADMIN_PASSWORD")
 	if adminPassword == "" {
-		log.Fatal("Missing admin password in environment variables.")
+		log.Fatal("Missing admin password in environment variables")
 	}
 
 	adminLogin = os.Getenv("ADMIN_LOGIN")
 	if adminLogin == "" {
-		log.Fatal("Missing admin username in environment variables.")
+		log.Fatal("Missing admin username in environment variables")
 	}
 
-	tokenLifetime, err = strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
+	tokenLifetime, err = strconv.Atoi(strings.TrimSpace(os.Getenv("TOKEN_LIFETIME")))
 	if err != nil {
-		log.Fatal("Can't parse token lifetime.")
+		log.Fatal("Can't parse token lifetime: ", err)
 	}
 
 	secret = os.Getenv("SECRET")
 	if secret == "" {
-		log.Fatal("Missing secret in environvent variables.")
+		log.Fatal("Missing secret in environvent variables")
 	}
 
-	frontend = os.Getenv("FRONTEND_ADRESS")
+	origins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
+	if len(origins) == 0 {
+		log.Fatal("Missing allow origins")
+	}
 
-	port, err = strconv.Atoi(os.Getenv("PORT"))
+	port, err = strconv.Atoi(strings.TrimSpace(os.Getenv("PORT")))
 	if err != nil {
-		log.Fatal("Can't parse port.")
+		log.Fatal("Can't parse port: ", err)
 	}
 }
 
 func main() {
-	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort)
+	dbPostgres, err := setupst.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, 5)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,7 +106,7 @@ func main() {
 	}(dbPostgres)
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{frontend}
+	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
 	config.AddAllowHeaders("Authorization", "Cookie")
@@ -140,62 +143,65 @@ func main() {
 	articleRouter := router.Group("/article")
 	articleRouter.GET("/get/all", articleHandler.GetAllArticles)
 	articleRouter.GET("/get/:articleId", articleHandler.GetArticleById)
-	articleRouter.POST("/create", articleHandler.Create).Use(authMiddleware)
-	articleRouter.PUT("/update", articleHandler.Update).Use(authMiddleware)
-	articleRouter.DELETE("/delete/:id", articleHandler.Delete).Use(authMiddleware)
+
+	articleRouter.POST("/create", authMiddleware, articleHandler.Create)
+	articleRouter.PUT("/update", authMiddleware, articleHandler.Update)
+	articleRouter.DELETE("/delete/:id", authMiddleware, articleHandler.Delete)
 
 	authRouter := router.Group("/admin/auth")
 	authRouter.POST("/login", authHandler.Login)
 
 	commentRouter := router.Group("/comments")
 	commentRouter.GET("/get/all", commentHandler.GetAll)
-	commentRouter.POST("/create", commentHandler.Create)
 
-	commentRouter.PATCH("/update", commentHandler.Update).Use(authMiddleware)
-	commentRouter.PATCH("/approve", commentHandler.Approve).Use(authMiddleware)
-	commentRouter.DELETE("/delete/:id", commentHandler.Delete).Use(authMiddleware)
+	commentRouter.POST("/create", authMiddleware, commentHandler.Create)
+	commentRouter.PATCH("/update", authMiddleware, commentHandler.Update)
+	commentRouter.PATCH("/approve", authMiddleware, commentHandler.Approve)
+	commentRouter.DELETE("/delete/:id", authMiddleware, commentHandler.Delete)
 
 	councilRouter := router.Group("/council/members")
 	councilRouter.GET("/get/all", councilHandler.GetAll)
 	councilRouter.GET("/get/:memberId", councilHandler.GetMemberById)
 
-	councilRouter.POST("/create", councilHandler.Create).Use(authMiddleware)
-	councilRouter.PUT("/update/:id", councilHandler.Update).Use(authMiddleware)
-	councilRouter.DELETE("/delete/:id", councilHandler.Delete).Use(authMiddleware)
+	councilRouter.POST("/create", authMiddleware, councilHandler.Create)
+	councilRouter.PUT("/update/:id", authMiddleware, councilHandler.Update)
+	councilRouter.DELETE("/delete/:id", authMiddleware, councilHandler.Delete)
 
 	editionRouter := router.Group("/editions")
 	editionRouter.GET("/get/all", editionHandler.GetAllEditions)
 	editionRouter.GET("/get/:editionId", editionHandler.GetEditionById)
-	editionRouter.POST("/create", editionHandler.CreateEdition).Use(authMiddleware)
-	editionRouter.PUT("/update", editionHandler.UpdateEdition).Use(authMiddleware)
-	editionRouter.DELETE("/delete/:id", editionHandler.DeleteEdition).Use(authMiddleware)
+
+	editionRouter.POST("/create", authMiddleware, editionHandler.CreateEdition)
+	editionRouter.PUT("/update", authMiddleware, editionHandler.UpdateEdition)
+	editionRouter.DELETE("/delete/:id", authMiddleware, editionHandler.DeleteEdition)
 
 	redactionRouter := router.Group("/redaction/members")
 	redactionRouter.GET("/get/all", redactionHandler.GetAll)
 	redactionRouter.GET("/get/:memberId", redactionHandler.GetMemberById)
-	redactionRouter.POST("/create", redactionHandler.Create).Use(authMiddleware)
-	redactionRouter.PUT("/update/:id", redactionHandler.Update).Use(authMiddleware)
-	redactionRouter.DELETE("/delete/:id", redactionHandler.Delete).Use(authMiddleware)
+
+	redactionRouter.POST("/create", authMiddleware, redactionHandler.Create)
+	redactionRouter.PUT("/update/:id", authMiddleware, redactionHandler.Update)
+	redactionRouter.DELETE("/delete/:id", authMiddleware, redactionHandler.Delete)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router.Handler(),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	// ctx, cancel := context.WithCancel(context.Background())
 
-	go func(ctx context.Context, srv *http.Server) {
-		<-ctx.Done()
-		err := server.Shutdown(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(ctx, server)
+	// go func(ctx context.Context, srv *http.Server) {
+	// 	<-ctx.Done()
+	// 	err := server.Shutdown(ctx)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }(ctx, server)
 
-	go func(cancel context.CancelFunc) {
-		fmt.Scanln()
-		cancel()
-	}(cancel)
+	// go func(cancel context.CancelFunc) {
+	// 	fmt.Scanln()
+	// 	cancel()
+	// }(cancel)
 
 	err = server.ListenAndServe()
 	if err != nil {

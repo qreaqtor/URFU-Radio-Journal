@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:alpine3.20
     environment:
-      POSTGRES_USER: 'testuser'
-      POSTGRES_PASSWORD: 'testpass'
-      POSTGRES_DB: 'radio_journal'
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - '5432:5432'
     volumes:
@@ -14,3 +14,18 @@ services:
 
   radiojournal:
     build: ./
+    environment:
+      PORT: ${PORT}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      DB_HOST: ${DB_HOST}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_LOGIN: ${ADMIN_LOGIN}
+      COOKIE_MAX_AGE: ${COOKIE_MAX_AGE}
+      SECRET: ${SECRET}
+      ALLOW_ORIGINS: ${ALLOW_ORIGINS}
+      TOKEN_LIFETIME: ${TOKEN_LIFETIME}
+    ports:
+      - '8080:8080'
