@@ -12,6 +12,23 @@ services:
     volumes:
       - './internal/storage/postgres/_sql/:/docker-entrypoint-initdb.d/'
 
+  minio:
+    image: minio/minio:latest
+    command: server --console-address ":9001" /data/
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ozontech
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - './minio-storage:/data'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
   radiojournal:
     build: ./
     environment:
@@ -20,12 +37,14 @@ services:
       DB_USER: ${DB_USER}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: postgres
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_LOGIN: ${ADMIN_LOGIN}
-      COOKIE_MAX_AGE: ${COOKIE_MAX_AGE}
       SECRET: ${SECRET}
       ALLOW_ORIGINS: ${ALLOW_ORIGINS}
       TOKEN_LIFETIME: ${TOKEN_LIFETIME}
     ports:
       - '8080:8080'
+    depends_on:
+      - postgres
+      - minio

@@ -31,7 +31,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 // для этого надо завести отдельный файл с конфигами
@@ -48,10 +47,7 @@ var (
 )
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println(err)
-	}
+	var err error
 
 	dbPassword = os.Getenv("DB_PASSWORD")
 	dbUser = os.Getenv("DB_USER")
