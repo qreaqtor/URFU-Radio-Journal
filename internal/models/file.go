@@ -3,13 +3,13 @@ package models
 import "io"
 
 type FileUnit struct {
-	Info      *FileInfo
-	Payload   io.Reader
-	PayloadID string
+	Payload     io.Reader
+	InfoID      string // this field sets in service
+	Size        int64
+	ContentType string
 }
 
 type FileInfo struct {
-	Name        string
-	ContentType string
-	Size        int64
+	Filename   string
+	BacketName string // this field sets in service
 }

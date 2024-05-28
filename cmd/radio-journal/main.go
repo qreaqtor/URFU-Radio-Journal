@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -14,6 +15,7 @@ import (
 	commentshand "urfu-radio-journal/internal/handlers/comments"
 	councilhand "urfu-radio-journal/internal/handlers/council"
 	editionhand "urfu-radio-journal/internal/handlers/edition"
+	filehand "urfu-radio-journal/internal/handlers/files"
 	"urfu-radio-journal/internal/handlers/middleware"
 	redactionhand "urfu-radio-journal/internal/handlers/redaction"
 	articlesrv "urfu-radio-journal/internal/services/article"
@@ -21,16 +23,29 @@ import (
 	commentsrv "urfu-radio-journal/internal/services/comments"
 	councilsrv "urfu-radio-journal/internal/services/council"
 	editionsrv "urfu-radio-journal/internal/services/edition"
+	filesrv "urfu-radio-journal/internal/services/files"
+	"urfu-radio-journal/internal/services/files/buckets"
 	redactionsrv "urfu-radio-journal/internal/services/redaction"
+	filest "urfu-radio-journal/internal/storage/minio/files"
+	miniost "urfu-radio-journal/internal/storage/minio/setup"
 	articlest "urfu-radio-journal/internal/storage/postgres/article"
 	commentst "urfu-radio-journal/internal/storage/postgres/comments"
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
+	fileinfost "urfu-radio-journal/internal/storage/postgres/fileinfo"
 	redactionst "urfu-radio-journal/internal/storage/postgres/redaction"
 	postgrest "urfu-radio-journal/internal/storage/postgres/setup"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	videosBucket    = "videos"
+	imagesBucket    = "images"
+	documentsBucket = "documents"
+
+	fileInfoTable = "fileinfo"
 )
 
 // для этого надо завести отдельный файл с конфигами
@@ -44,6 +59,10 @@ var (
 
 	dbUser, dbPassword, dbHost, dbName string
 	dbPort                             int
+	connCount                          int
+
+	minioUser, minioPassword, minioEndpoint string
+	ssl                                     bool
 )
 
 func init() {
@@ -53,7 +72,7 @@ func init() {
 	dbUser = os.Getenv("DB_USER")
 	dbHost = os.Getenv("DB_HOST")
 	dbName = os.Getenv("DB_NAME")
-	dbPort, err = strconv.Atoi(strings.TrimSpace(os.Getenv("DB_PORT")))
+	dbPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
 		log.Fatal("Can't parse dbPort: ", err)
 	}
@@ -68,7 +87,7 @@ func init() {
 		log.Fatal("Missing admin username in environment variables")
 	}
 
-	tokenLifetime, err = strconv.Atoi(strings.TrimSpace(os.Getenv("TOKEN_LIFETIME")))
+	tokenLifetime, err = strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
 	if err != nil {
 		log.Fatal("Can't parse token lifetime: ", err)
 	}
@@ -83,14 +102,41 @@ func init() {
 		log.Fatal("Missing allow origins")
 	}
 
-	port, err = strconv.Atoi(strings.TrimSpace(os.Getenv("PORT")))
+	port, err = strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatal("Can't parse port: ", err)
+	}
+
+	connCount, err = strconv.Atoi(os.Getenv("CONNECT_COUNT"))
+	if err != nil {
+		log.Fatal("Can't parse port: ", err)
+	}
+
+	ssl, err = strconv.ParseBool(os.Getenv("SSL"))
+	if err != nil {
+		log.Fatal("Can't parse port: ", err)
+	}
+
+	minioUser = os.Getenv("MINIO_USER")
+	if minioUser == "" {
+		log.Fatal("Missing minio username in environment variables")
+	}
+
+	minioPassword = os.Getenv("MINIO_PASSWORD")
+	if minioPassword == "" {
+		log.Fatal("Missing minio password in environment variables")
+	}
+
+	minioEndpoint = os.Getenv("MINIO_ENDPOINT")
+	if minioEndpoint == "" {
+		log.Fatal("Missing minio endpoint in environment variables")
 	}
 }
 
 func main() {
-	dbPostgres, err := postgrest.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, 5)
+	ctx := context.Background()
+
+	dbPostgres, err := postgrest.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, connCount)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,11 +147,24 @@ func main() {
 		}
 	}(dbPostgres)
 
+	minioClient, err := miniost.GetConnect(minioUser, minioPassword, minioEndpoint, ssl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = miniost.InitBuckets(ctx, minioClient,
+		videosBucket,
+		imagesBucket,
+		documentsBucket,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	config := cors.DefaultConfig()
 	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
-	config.AddAllowHeaders("Authorization", "Cookie")
+	config.AddAllowHeaders("Authorization", "Content-Type")
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
@@ -113,14 +172,25 @@ func main() {
 	councilStorage := councilst.NewCouncilStorage(dbPostgres)
 	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
 	redactionStorage := redactionst.NewRedactionStorage(dbPostgres)
+	fileInfoStorage := fileinfost.NewFileInfoStorage(dbPostgres, fileInfoTable)
+	videoStorage := filest.NewFileStorage(minioClient, videosBucket)
+	imageStorage := filest.NewFileStorage(minioClient, imagesBucket)
+	documentStorage := filest.NewFileStorage(minioClient, documentsBucket)
+
+	types := buckets.AllowedContentType{
+		videoStorage:    {"video/mp4"},
+		imageStorage:    {"image/jpeg"},
+		documentStorage: {"application/pdf"},
+	}
 
 	// тут всех сервисов
-	articleService := articlesrv.NewArticleService(articleStorage)
 	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
+	articleService := articlesrv.NewArticleService(articleStorage)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)
 	editionService := editionsrv.NewEditionService(editionStorage)
 	redactionService := redactionsrv.NewRedactionService(redactionStorage)
+	fileService := filesrv.NewFileService(types, fileInfoStorage)
 
 	// тут хендлеров
 	articleHandler := articlehand.NewArticleHandler(articleService)
@@ -129,9 +199,12 @@ func main() {
 	councilHandler := councilhand.NewCouncilHandler(councilService)
 	editionHandler := editionhand.NewEditionHandler(editionService)
 	redactionHandler := redactionhand.NewRedactionHandler(redactionService)
+	fileHandler := filehand.NewFilesHandler(fileService)
 
-	router := gin.Default()
-	router.Use(cors.New(config))
+	engine := gin.Default()
+	engine.Use(cors.New(config))
+
+	router := engine.Group("/api/v1")
 
 	authMiddleware := middleware.AuthMiddleware(authService.ValidateToken)
 
@@ -179,25 +252,16 @@ func main() {
 	redactionRouter.PUT("/update/:id", authMiddleware, redactionHandler.Update)
 	redactionRouter.DELETE("/delete/:id", authMiddleware, redactionHandler.Delete)
 
+	fileRouter := router.Group("/files")
+	fileRouter.GET("/download/:filePathId", fileHandler.DownloadFile)
+
+	fileRouter.DELETE("/delete/:filePathId", fileHandler.DeleteFile)
+	fileRouter.POST("/upload/:resourceType", fileHandler.UploadFile)
+
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: router.Handler(),
+		Handler: engine.Handler(),
 	}
-
-	// ctx, cancel := context.WithCancel(context.Background())
-
-	// go func(ctx context.Context, srv *http.Server) {
-	// 	<-ctx.Done()
-	// 	err := server.Shutdown(ctx)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }(ctx, server)
-
-	// go func(cancel context.CancelFunc) {
-	// 	fmt.Scanln()
-	// 	cancel()
-	// }(cancel)
 
 	err = server.ListenAndServe()
 	if err != nil {

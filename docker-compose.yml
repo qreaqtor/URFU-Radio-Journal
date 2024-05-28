@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   postgres:
     image: postgres:alpine3.20
@@ -17,10 +15,9 @@ services:
     command: server --console-address ":9001" /data/
     ports:
       - "9000:9000"
-      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
     volumes:
       - './minio-storage:/data'
     healthcheck:
@@ -43,6 +40,11 @@ services:
       SECRET: ${SECRET}
       ALLOW_ORIGINS: ${ALLOW_ORIGINS}
       TOKEN_LIFETIME: ${TOKEN_LIFETIME}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_ENDPOINT: minio:9000
+      CONN_COUNT: ${CONN_COUNT}
+      SSL: ${SSL}
     ports:
       - '8080:8080'
     depends_on:

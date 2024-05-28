@@ -1,4 +1,4 @@
-package filepathand
+package filehand
 
 import (
 	"context"
@@ -9,19 +9,18 @@ import (
 )
 
 type service interface {
-	Create(context.Context, *models.FileUnit) (string, error)
-	Get(context.Context) error
-	Update(context.Context) error
-	Delete(context.Context, string) error
+	UploadFile(context.Context, *models.FileUnit, *models.FileInfo) (string, error)
+	DownloadFile(context.Context, string) (*models.FileUnit, error)
+	DeleteFile(context.Context, string) error
 }
 
 type FilePathsHandler struct {
-	filePaths service
+	files service
 }
 
-func NewFileshandler(filePaths service) *FilePathsHandler {
+func NewFilesHandler(files service) *FilePathsHandler {
 	return &FilePathsHandler{
-		filePaths: filePaths,
+		files: files,
 	}
 }
 
@@ -39,16 +38,16 @@ func (fp *FilePathsHandler) UploadFile(ctx *gin.Context) {
 	}
 	defer file.Close()
 
+	fileInfo := &models.FileInfo{
+		Filename: fileHeader.Filename,
+	}
 	fileUnit := &models.FileUnit{
-		Payload: file,
-		Info: &models.FileInfo{
-			Name:        fileHeader.Filename,
-			ContentType: ctx.ContentType(),
-			Size:        fileHeader.Size,
-		},
+		Payload:     file,
+		ContentType: ctx.ContentType(),
+		Size:        fileHeader.Size,
 	}
 
-	id, err := fp.filePaths.Create(ctx.Request.Context(), fileUnit)
+	id, err := fp.files.UploadFile(ctx.Request.Context(), fileUnit, fileInfo)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -60,27 +59,24 @@ func (fp *FilePathsHandler) UploadFile(ctx *gin.Context) {
 	})
 }
 
-func (fp *FilePathsHandler) UpdateFile(ctx *gin.Context) {
-	// file, err := ctx.FormFile("file")
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// filePathId := ctx.Param("filePathId")
-	// path, err := fp.filePaths.UpdateFile(file.Filename, filePathId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// err = ctx.SaveUploadedFile(file, path)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// ctx.JSON(http.StatusOK, gin.H{"message": "success"})
-}
+func (fp *FilePathsHandler) DownloadFile(ctx *gin.Context) {
+	fileID := ctx.Param("fileID")
 
-func (fp *FilePathsHandler) Get(ctx *gin.Context) {
+	fileUnit, err := fp.files.DownloadFile(ctx, fileID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	buf := make([]byte, fileUnit.Size)
+	_, err = fileUnit.Payload.Read(buf)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	ctx.Header("Content-Disposition", "attachment")
+	ctx.Data(http.StatusOK, fileUnit.ContentType, buf)
 	// downloadStr := ctx.Query("download")
 	// if downloadStr != "" {
 	// 	download, err := strconv.ParseBool(downloadStr)
@@ -101,14 +97,16 @@ func (fp *FilePathsHandler) Get(ctx *gin.Context) {
 	// ctx.File(path)
 }
 
-func (fp *FilePathsHandler) Delete(ctx *gin.Context) {
-	// filePathId := ctx.Param("filePathId")
-	// err := fp.filePaths.DeleteOne(filePathId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+func (fp *FilePathsHandler) DeleteFile(ctx *gin.Context) {
+	fileID := ctx.Param("fileID")
+
+	err := fp.files.DeleteFile(ctx.Request.Context(), fileID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
 // func (fp *FilePathsHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
@@ -118,8 +116,4 @@ func (fp *FilePathsHandler) Delete(ctx *gin.Context) {
 // 	adminRg.DELETE("/delete/:filePathId", fp.delete)
 // 	adminRg.PUT("/update/:filePathId", fp.updateFile)
 // 	adminRg.POST("/upload/:resourceType", fp.uploadFile)
-// }
-
-// func (fp *FilePathsHandler) GetDeleteHandler() func(filter primitive.M) error {
-// 	return fp.filePaths.DeleteManyHandler
 // }

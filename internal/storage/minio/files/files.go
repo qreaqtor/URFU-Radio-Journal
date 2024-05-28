@@ -24,10 +24,10 @@ func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit) err
 	info, err := f.client.PutObject(
 		ctx,
 		f.bucket,
-		file.PayloadID,
+		file.InfoID,
 		file.Payload,
-		file.Info.Size,
-		minio.PutObjectOptions{},
+		file.Size,
+		minio.PutObjectOptions{ContentType: file.ContentType},
 	)
 	if err != nil {
 		return err
@@ -36,15 +36,46 @@ func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit) err
 	return nil
 }
 
-func (f *FileStorage) DeleteFile(ctx context.Context, objName string) error {
+func (f *FileStorage) DeleteFile(ctx context.Context, id string) error {
 	err := f.client.RemoveObject(
 		ctx,
 		f.bucket,
-		objName,
+		id,
 		minio.RemoveObjectOptions{},
 	)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.FileUnit, error) {
+	obj, err := f.client.GetObject(
+		ctx,
+		f.bucket,
+		id,
+		minio.GetObjectOptions{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer obj.Close()
+
+	stat, err := obj.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	file := &models.FileUnit{
+		InfoID:      id,
+		Payload:     obj,
+		Size:        stat.Size,
+		ContentType: stat.ContentType,
+	}
+
+	return file, nil
+}
+
+func (f *FileStorage) GetBucketName() string {
+	return f.bucket
 }

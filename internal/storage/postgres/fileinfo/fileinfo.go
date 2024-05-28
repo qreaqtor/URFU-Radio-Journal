@@ -20,15 +20,14 @@ func NewFileInfoStorage(db *sql.DB, table string) *FileInfoStorage {
 
 func (f *FileInfoStorage) InsertOne(fileInfo *models.FileInfo) (string, error) {
 	query := fmt.Sprintf(
-		"INSERT INTO %s (filename, content_type, size) VALUES ($1, $2, $3) RETURNING file_id",
+		"INSERT INTO %s (filename, backet) VALUES ($1, $2) RETURNING file_id",
 		f.table,
 	)
 
 	row := f.db.QueryRow(
 		query,
-		fileInfo.Name,
-		fileInfo.ContentType,
-		fileInfo.Size,
+		fileInfo.Filename,
+		fileInfo.BacketName,
 	)
 
 	var id string
@@ -40,13 +39,34 @@ func (f *FileInfoStorage) InsertOne(fileInfo *models.FileInfo) (string, error) {
 }
 
 func (f *FileInfoStorage) DeleteOne(id string) error {
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE edition_id = $1",
+		f.table,
+	)
+
+	_, err := f.db.Exec(
+		query,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (f *FileInfoStorage) FindOne(id string) (*models.FileInfo, error) {
-	return nil, nil
-}
+	query := fmt.Sprintf(
+		"SELECT filename, backet FROM %s WHERE file_id = $1",
+		f.table,
+	)
 
-func (f *FileInfoStorage) UpdateOne(id string) error {
-	return nil
+	row := f.db.QueryRow(query, id)
+
+	fileInfo := &models.FileInfo{}
+	err := row.Scan(&fileInfo.Filename, &fileInfo.BacketName)
+	if err != nil {
+		return nil, err
+	}
+	return fileInfo, nil
 }

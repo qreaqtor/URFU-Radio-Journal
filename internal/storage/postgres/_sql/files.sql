@@ -1,7 +1,6 @@
-DROP TABLE IF EXISTS "files";
-CREATE TABLE "files" (
+DROP TABLE IF EXISTS "fileinfo";
+CREATE TABLE "fileinfo" (
     "file_id" integer PRIMARY KEY,
-    "content_type" character varying(1000),
     "filename" character varying(1000),
-    "size" integer NOT NULL,
+    "backet" integer NOT NULL
 );
