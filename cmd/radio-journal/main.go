@@ -29,6 +29,7 @@ import (
 	filest "urfu-radio-journal/internal/storage/minio/files"
 	miniost "urfu-radio-journal/internal/storage/minio/setup"
 	articlest "urfu-radio-journal/internal/storage/postgres/article"
+	authorst "urfu-radio-journal/internal/storage/postgres/author"
 	commentst "urfu-radio-journal/internal/storage/postgres/comments"
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
@@ -63,6 +64,15 @@ var (
 
 	minioUser, minioPassword, minioEndpoint string
 	ssl                                     bool
+)
+
+const (
+	articlesTable  = "articles"
+	commentsTable  = "comments"
+	counsilTable   = "counsil"
+	editionsTable  = "editions"
+	redactionTable = "redaction"
+	authorsTable   = "authors"
 )
 
 func init() {
@@ -167,15 +177,16 @@ func main() {
 	config.AddAllowHeaders("Authorization", "Content-Type")
 
 	// тут инициализация всех стореджей
-	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
-	commentStorage := commentst.NewCommentStorage(dbPostgres)
-	councilStorage := councilst.NewCouncilStorage(dbPostgres)
-	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
-	redactionStorage := redactionst.NewRedactionStorage(dbPostgres)
+	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
+	commentStorage := commentst.NewCommentStorage(dbPostgres, commentsTable)
+	councilStorage := councilst.NewCouncilStorage(dbPostgres, counsilTable)
+	editionStorage := editionst.NewEditionStorage(dbPostgres, editionsTable)
+	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, redactionTable)
 	fileInfoStorage := fileinfost.NewFileInfoStorage(dbPostgres, fileInfoTable)
 	videoStorage := filest.NewFileStorage(minioClient, videosBucket)
 	imageStorage := filest.NewFileStorage(minioClient, imagesBucket)
 	documentStorage := filest.NewFileStorage(minioClient, documentsBucket)
+	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
 	types := buckets.AllowedContentType{
 		videoStorage:    {"video/mp4"},
@@ -184,8 +195,8 @@ func main() {
 	}
 
 	// тут всех сервисов
+	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
 	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
-	articleService := articlesrv.NewArticleService(articleStorage)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)
 	editionService := editionsrv.NewEditionService(editionStorage)
