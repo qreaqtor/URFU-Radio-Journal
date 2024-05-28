@@ -23,6 +23,7 @@ import (
 	editionsrv "urfu-radio-journal/internal/services/edition"
 	redactionsrv "urfu-radio-journal/internal/services/redaction"
 	articlest "urfu-radio-journal/internal/storage/postgres/article"
+	authorst "urfu-radio-journal/internal/storage/postgres/author"
 	commentst "urfu-radio-journal/internal/storage/postgres/comments"
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
@@ -109,13 +110,14 @@ func main() {
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
-	commentStorage := commentst.NewCommentStorage(dbPostgres)
-	councilStorage := councilst.NewCouncilStorage(dbPostgres)
+	commentStorage := commentst.NewCommentStorage(dbPostgres, "comments")
+	councilStorage := councilst.NewCouncilStorage(dbPostgres, "counsil")
 	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
-	redactionStorage := redactionst.NewRedactionStorage(dbPostgres)
+	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, "redaction")
+	authorStorage := authorst.NewAuthorStorage(dbPostgres, "authors")
 
 	// тут всех сервисов
-	articleService := articlesrv.NewArticleService(articleStorage)
+	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
 	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)

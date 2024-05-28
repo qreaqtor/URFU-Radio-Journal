@@ -2,31 +2,62 @@ package redactionst
 
 import (
 	"database/sql"
+	"fmt"
 	"urfu-radio-journal/internal/models"
 )
 
 type RedactionStorage struct {
-	db *sql.DB
+	db    *sql.DB
+	table string
 }
 
-func NewRedactionStorage(db *sql.DB) *RedactionStorage {
+func NewRedactionStorage(db *sql.DB, table string) *RedactionStorage {
 	return &RedactionStorage{
-		db: db,
+		db:    db,
+		table: table,
 	}
+}
+
+func getColumns() string {
+	return "fullname_ru, fullname_en, description_ru, description_en, location_ru, location_en, email, photo_path, date_join, rank, content_ru, content_en"
+}
+
+func generateValuesID(count int) string {
+	res := ""
+	for i := 1; i < count; i++ {
+		res += fmt.Sprintf("$%v, ", i)
+	}
+	res += fmt.Sprintf("$%v", count)
+	return res
 }
 
 func (rs *RedactionStorage) InsertOne(member *models.RedactionMemberCreate) (string, error) {
-	stmt, err := rs.db.Prepare("INSERT INTO redaction (fullname_ru, fullname_en, description_ru, description_en, location_ru, location_en, email, photo_path, date_join, rank, content_ru, content_en) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING member_id")
-
-	if err != nil {
-		return "", err
-	}
-	defer stmt.Close()
-
 	var id string
-	err = stmt.QueryRow(member.Name.Ru, member.Name.Eng, member.Description.Ru, member.Description.Eng,
-		member.Location.Ru, member.Location.Eng, member.Email, member.ImagePathId,
-		member.DateJoin, member.Rank, member.Content.Ru, member.Content.Eng).Scan(&id)
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s) RETURNING member_id;",
+		rs.table,
+		getColumns(),
+		generateValuesID(12),
+	)
+
+	row := rs.db.QueryRow(
+		query,
+		member.Name.Ru,
+		member.Name.Eng,
+		member.Description.Ru,
+		member.Description.Eng,
+		member.Location.Ru,
+		member.Location.Eng,
+		member.Email,
+		member.ImagePathId,
+		member.DateJoin,
+		member.Rank,
+		member.Content.Ru,
+		member.Content.Eng,
+	)
+
+	err := row.Scan(&id)
 
 	if err != nil {
 		return "", err
@@ -36,10 +67,41 @@ func (rs *RedactionStorage) InsertOne(member *models.RedactionMemberCreate) (str
 }
 
 func (rs *RedactionStorage) UpdateOne(memberIdStr string, memberUpdate *models.RedactionMemberUpdate) error {
-	_, err := rs.db.Exec("UPDATE redaction SET fullname_ru = $1, fullname_en = $2, description_ru = $3, description_en = $4, location_ru = $5, location_en = $6, email = $7, photo_path = $8, date_join = $9, rank = $10, content_ru = $11, content_en = $12 WHERE member_id = $13",
-		memberUpdate.Name.Ru, memberUpdate.Name.Eng, memberUpdate.Description.Ru, memberUpdate.Description.Eng,
-		memberUpdate.Location.Ru, memberUpdate.Location.Eng, memberUpdate.Email, memberUpdate.ImagePathId,
-		memberUpdate.DateJoin, memberUpdate.Rank, memberUpdate.Content.Ru, memberUpdate.Content.Eng, memberIdStr)
+	query := fmt.Sprintf(
+		`UPDATE %s 
+		SET 
+		fullname_ru = $1, 
+		fullname_en = $2, 
+		description_ru = $3, 
+		description_en = $4, 
+		location_ru = $5, 
+		location_en = $6, 
+		email = $7, 
+		photo_path = $8, 
+		date_join = $9, 
+		rank = $10, 
+		content_ru = $11, 
+		content_en = $12 
+		WHERE 
+		member_id = $13`,
+		rs.table,
+	)
+	_, err := rs.db.Exec(
+		query,
+		memberUpdate.Name.Ru,
+		memberUpdate.Name.Eng,
+		memberUpdate.Description.Ru,
+		memberUpdate.Description.Eng,
+		memberUpdate.Location.Ru,
+		memberUpdate.Location.Eng,
+		memberUpdate.Email,
+		memberUpdate.ImagePathId,
+		memberUpdate.DateJoin,
+		memberUpdate.Rank,
+		memberUpdate.Content.Ru,
+		memberUpdate.Content.Eng,
+		memberIdStr,
+	)
 
 	if err != nil {
 		return err
@@ -49,7 +111,11 @@ func (rs *RedactionStorage) UpdateOne(memberIdStr string, memberUpdate *models.R
 }
 
 func (rs *RedactionStorage) Delete(idStr string) error {
-	_, err := rs.db.Exec("DELETE FROM redaction WHERE member_id = $1", idStr)
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE member_id = $1",
+		rs.table,
+	)
+	_, err := rs.db.Exec(query, idStr)
 
 	if err != nil {
 		return err
@@ -59,7 +125,15 @@ func (rs *RedactionStorage) Delete(idStr string) error {
 
 func (rs *RedactionStorage) GetImagePathId(idStr string) (string, error) {
 	var imagePathId string
-	err := rs.db.QueryRow("SELECT photo_path FROM redaction WHERE member_id = $1", idStr).Scan(&imagePathId)
+
+	query := fmt.Sprintf(
+		"SELECT photo_path FROM %s WHERE member_id = $1",
+		rs.table,
+	)
+
+	row := rs.db.QueryRow(query, idStr)
+	err := row.Scan(&imagePathId)
+
 	if err != nil {
 		return "", err
 	}
@@ -67,18 +141,39 @@ func (rs *RedactionStorage) GetImagePathId(idStr string) (string, error) {
 }
 
 func (rs *RedactionStorage) GetAll() ([]*models.RedactionMemberRead, error) {
-	rows, err := rs.db.Query("SELECT member_id, fullname_ru, fullname_en, description_ru, description_en, location_ru, location_en, email, photo_path, date_join, rank, content_ru, content_en FROM redaction")
+	var members []*models.RedactionMemberRead
+
+	query := fmt.Sprintf(
+		"SELECT member_id, %s FROM %s",
+		getColumns(),
+		rs.table,
+	)
+
+	rows, err := rs.db.Query(query)
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var members []*models.RedactionMemberRead
 	for rows.Next() {
 		var member models.RedactionMemberRead
-		err = rows.Scan(&member.Id, &member.Name.Ru, &member.Name.Ru, &member.Description.Ru, &member.Description.Eng,
-			&member.Location.Ru, &member.Location.Eng, &member.Email, &member.ImagePathId, &member.DateJoin, &member.Rank,
-			&member.Content.Ru, &member.Content.Eng)
+
+		err = rows.Scan(
+			&member.Id,
+			&member.Name.Ru,
+			&member.Name.Ru,
+			&member.Description.Ru,
+			&member.Description.Eng,
+			&member.Location.Ru,
+			&member.Location.Eng,
+			&member.Email,
+			&member.ImagePathId,
+			&member.DateJoin,
+			&member.Rank,
+			&member.Content.Ru,
+			&member.Content.Eng,
+		)
 
 		if err != nil {
 			return nil, err
@@ -95,10 +190,30 @@ func (rs *RedactionStorage) GetAll() ([]*models.RedactionMemberRead, error) {
 
 func (rs *RedactionStorage) FindOne(memberIdStr string) (*models.RedactionMemberRead, error) {
 	var member models.RedactionMemberRead
-	err := rs.db.QueryRow("SELECT member_id, fullname_ru, fullname_en, description_ru, description_en, location_ru, location_en, email, photo_path, date_join, rank, content_ru, content_en FROM redaction WHERE member_id = $1", memberIdStr).
-		Scan(&member.Id, &member.Name.Ru, &member.Name.Ru, &member.Description.Ru, &member.Description.Eng,
-			&member.Location.Ru, &member.Location.Eng, &member.Email, &member.ImagePathId, &member.DateJoin, &member.Rank,
-			&member.Content.Ru, &member.Content.Eng)
+
+	query := fmt.Sprintf(
+		"SELECT member_id, %s FROM %s WHERE member_id = $1",
+		getColumns(),
+		rs.table,
+	)
+
+	row := rs.db.QueryRow(query, memberIdStr)
+
+	err := row.Scan(
+		&member.Id,
+		&member.Name.Ru,
+		&member.Name.Ru,
+		&member.Description.Ru,
+		&member.Description.Eng,
+		&member.Location.Ru,
+		&member.Location.Eng,
+		&member.Email,
+		&member.ImagePathId,
+		&member.DateJoin,
+		&member.Rank,
+		&member.Content.Ru,
+		&member.Content.Eng,
+	)
 
 	if err != nil {
 		return nil, err
