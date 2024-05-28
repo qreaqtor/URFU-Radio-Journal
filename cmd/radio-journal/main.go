@@ -23,6 +23,7 @@ import (
 	editionsrv "urfu-radio-journal/internal/services/edition"
 	redactionsrv "urfu-radio-journal/internal/services/redaction"
 	articlest "urfu-radio-journal/internal/storage/postgres/article"
+	authorst "urfu-radio-journal/internal/storage/postgres/author"
 	commentst "urfu-radio-journal/internal/storage/postgres/comments"
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
@@ -44,6 +45,15 @@ var (
 
 	dbUser, dbPassword, dbHost, dbName string
 	dbPort                             int
+)
+
+const (
+	articlesTable  = "articles"
+	commentsTable  = "comments"
+	counsilTable   = "counsil"
+	editionsTable  = "editions"
+	redactionTable = "redaction"
+	authorsTable   = "authors"
 )
 
 func init() {
@@ -108,14 +118,15 @@ func main() {
 	config.AddAllowHeaders("Authorization", "Cookie")
 
 	// тут инициализация всех стореджей
-	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
-	commentStorage := commentst.NewCommentStorage(dbPostgres)
-	councilStorage := councilst.NewCouncilStorage(dbPostgres)
-	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
-	redactionStorage := redactionst.NewRedactionStorage(dbPostgres)
+	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
+	commentStorage := commentst.NewCommentStorage(dbPostgres, commentsTable)
+	councilStorage := councilst.NewCouncilStorage(dbPostgres, counsilTable)
+	editionStorage := editionst.NewEditionStorage(dbPostgres, editionsTable)
+	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, redactionTable)
+	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
 	// тут всех сервисов
-	articleService := articlesrv.NewArticleService(articleStorage)
+	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
 	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)

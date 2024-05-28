@@ -74,32 +74,6 @@ func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, erro
 		return "", err
 	}
 
-	for _, author := range article.Authors {
-		query := "INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id"
-		row = as.db.QueryRow(
-			query,
-			author.FullName.Ru,
-			author.FullName.Eng,
-			author.Affilation,
-			author.Email,
-		)
-
-		var authorID int
-		err := row.Scan(&authorID)
-		if err != nil {
-			return "", err
-		}
-
-		_, err = as.db.Exec(
-			"INSERT INTO authors_articles (article, author) VALUES ($1, $2)",
-			articleID,
-			authorID,
-		)
-		if err != nil {
-			return "", err
-		}
-	}
-
 	return strconv.Itoa(articleID), nil
 }
 
@@ -158,12 +132,6 @@ func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) 
 			}
 			article.Keywords = append(article.Keywords, keyword)
 		}
-
-		authors, err := as.getAuthorsByArticleID(article.Id)
-		if err != nil {
-			return nil, err
-		}
-		article.Authors = authors
 
 		articles = append(articles, &article)
 	}
@@ -224,12 +192,6 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 		article.Keywords = append(article.Keywords, keyword)
 	}
 
-	authors, err := as.getAuthorsByArticleID(article.Id)
-	if err != nil {
-		return nil, err
-	}
-	article.Authors = authors
-
 	return article, nil
 }
 
@@ -243,10 +205,6 @@ func (as *ArticleStorage) Delete(IdStr string) error {
 		return err
 	}
 
-	_, err = as.db.Exec("DELETE FROM authors_articles WHERE article = $1", IdStr)
-	if err != nil {
-		return err
-	}
 	return err
 }
 
@@ -333,61 +291,5 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 		return err
 	}
 
-	_, err = as.db.Exec("DELETE FROM authors_articles WHERE article = $1", newArticle.Id)
-	if err != nil {
-		return err
-	}
-
-	for _, author := range newArticle.Authors {
-		row := as.db.QueryRow("INSERT INTO authors (fullname_ru, fullname_en, affiliation, email) VALUES ($1, $2, $3, $4) RETURNING author_id",
-			author.FullName.Ru,
-			author.FullName.Eng,
-			author.Affilation,
-			author.Email,
-		)
-
-		var authorID int
-		err = row.Scan(&authorID)
-		if err != nil {
-			return err
-		}
-
-		_, err = as.db.Exec("INSERT INTO authors_articles (article, author) VALUES ($1, $2)", newArticle.Id, authorID)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
-}
-
-func (as *ArticleStorage) getAuthorsByArticleID(articleID int) ([]models.Author, error) {
-	query := "SELECT fullname_ru, fullname_en, affiliation, email FROM authors WHERE author_id IN (SELECT author FROM authors_articles WHERE article = $1)"
-	rows, err := as.db.Query(query, articleID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var authors []models.Author
-
-	for rows.Next() {
-		var author models.Author
-		err := rows.Scan(
-			&author.FullName.Ru,
-			&author.FullName.Eng,
-			&author.Affilation,
-			&author.Email,
-		)
-		if err != nil {
-			return nil, err
-		}
-		authors = append(authors, author)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return authors, nil
 }
