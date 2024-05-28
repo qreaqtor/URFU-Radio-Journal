@@ -47,6 +47,15 @@ var (
 	dbPort                             int
 )
 
+const (
+	articlesTable  = "articles"
+	commentsTable  = "comments"
+	counsilTable   = "counsil"
+	editionsTable  = "editions"
+	redactionTable = "redaction"
+	authorsTable   = "authors"
+)
+
 func init() {
 	var err error
 
@@ -109,12 +118,12 @@ func main() {
 	config.AddAllowHeaders("Authorization", "Cookie")
 
 	// тут инициализация всех стореджей
-	articleStorage := articlest.NewArticleStorage(dbPostgres, "articles")
-	commentStorage := commentst.NewCommentStorage(dbPostgres, "comments")
-	councilStorage := councilst.NewCouncilStorage(dbPostgres, "counsil")
-	editionStorage := editionst.NewEditionStorage(dbPostgres, "editions")
-	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, "redaction")
-	authorStorage := authorst.NewAuthorStorage(dbPostgres, "authors")
+	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
+	commentStorage := commentst.NewCommentStorage(dbPostgres, commentsTable)
+	councilStorage := councilst.NewCouncilStorage(dbPostgres, counsilTable)
+	editionStorage := editionst.NewEditionStorage(dbPostgres, editionsTable)
+	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, redactionTable)
+	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
 	// тут всех сервисов
 	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
