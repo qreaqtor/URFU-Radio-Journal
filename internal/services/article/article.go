@@ -38,8 +38,13 @@ func NewArticleService(articleRepo articleStorage, authorRepo authorStorage) *Ar
 
 func (as *ArticleService) Create(article *models.ArticleCreate) (string, error) {
 	id, err := as.articleRepo.InsertOne(article)
-	if err == nil {
-		err = as.authorRepo.InsertMany(article.Authors, id)
+	if err != nil {
+		return "", err
+	}
+
+	err = as.authorRepo.InsertMany(article.Authors, id)
+	if err != nil {
+		return "", err
 	}
 
 	return id, err
@@ -52,14 +57,14 @@ func (as *ArticleService) GetAll(editionIdStr string) ([]*models.ArticleRead, er
 
 	articles, err := as.articleRepo.Find(editionIdStr)
 	if err != nil {
-		return articles, err
+		return nil, err
 	}
 
 	for _, article := range articles {
 		id := strconv.Itoa(article.Id)
 		authors, err := as.authorRepo.Find(id)
 		if err != nil {
-			return articles, err
+			return nil, err
 		}
 
 		article.Authors = authors
@@ -81,9 +86,10 @@ func (as *ArticleService) Get(articleIdStr string) (*models.ArticleRead, error) 
 	}
 
 	authors, err = as.authorRepo.Find(articleIdStr)
-	if err == nil {
-		article.Authors = authors
+	if err != nil {
+		return nil, err
 	}
+	article.Authors = authors
 
 	return article, err
 }
