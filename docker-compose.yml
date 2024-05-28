@@ -19,7 +19,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
     volumes:
-      - './minio-storage:/data'
+      - './attachments/minio-storage:/data'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
