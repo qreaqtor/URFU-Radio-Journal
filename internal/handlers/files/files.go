@@ -62,6 +62,7 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	defer fileUnit.Payload.Close()
 
 	_, err = io.Copy(ctx.Writer, fileUnit.Payload)
 	if err != nil {
