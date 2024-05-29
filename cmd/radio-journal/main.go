@@ -58,6 +58,8 @@ var (
 
 	port int
 
+	apiVersion int
+
 	dbUser, dbPassword, dbHost, dbName string
 	dbPort                             int
 	connCount                          int
@@ -115,6 +117,11 @@ func init() {
 	port, err = strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatal("Can't parse port: ", err)
+	}
+
+	apiVersion, err = strconv.Atoi(os.Getenv("API_VERSION"))
+	if err != nil {
+		log.Fatal("Can't parse apiVersion: ", err)
 	}
 
 	connCount, err = strconv.Atoi(os.Getenv("CONNECT_COUNT"))
@@ -215,7 +222,7 @@ func main() {
 	engine := gin.Default()
 	engine.Use(cors.New(config))
 
-	router := engine.Group("/api/v1")
+	router := engine.Group(fmt.Sprintf("/api/v%d",apiVersion))
 
 	authMiddleware := middleware.AuthMiddleware(authService.ValidateToken)
 
