@@ -2,6 +2,7 @@ package filehand
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"urfu-radio-journal/internal/models"
 
@@ -62,15 +63,14 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	buf := make([]byte, fileUnit.Size)
-	_, err = fileUnit.Payload.Read(buf)
+	_, err = io.Copy(ctx.Writer, fileUnit.Payload)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	ctx.Header("Content-Disposition", "attachment")
-	ctx.Data(http.StatusOK, fileUnit.ContentType, buf)
+	ctx.Header("Content-Disposition", "inline; filename="+fileUnit.Name)
+	ctx.Header("Content-Type", fileUnit.ContentType)
 }
 
 func (fp *FilesHandler) DeleteFile(ctx *gin.Context) {

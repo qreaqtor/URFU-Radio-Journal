@@ -38,7 +38,7 @@ func (f *FileService) UploadFile(ctx context.Context, fileUnit *models.FileUnit,
 		return "", err
 	}
 
-	fileUnit.InfoID = id
+	fileUnit.Name = id
 
 	err = bucket.UploadFile(ctx, fileUnit)
 	if err != nil {
@@ -49,7 +49,7 @@ func (f *FileService) UploadFile(ctx context.Context, fileUnit *models.FileUnit,
 		return "", err
 	}
 
-	return fileUnit.InfoID, nil
+	return fileUnit.Name, nil
 }
 
 func (f *FileService) DownloadFile(ctx context.Context, id string) (*models.FileUnit, error) {
@@ -67,6 +67,8 @@ func (f *FileService) DownloadFile(ctx context.Context, id string) (*models.File
 	if err != nil {
 		return nil, err
 	}
+
+	fileUnit.Name = info.Filename
 
 	return fileUnit, nil
 }

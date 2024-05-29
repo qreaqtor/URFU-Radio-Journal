@@ -2,7 +2,6 @@ package filest
 
 import (
 	"context"
-	"time"
 	"urfu-radio-journal/internal/models"
 
 	"github.com/minio/minio-go/v7"
@@ -24,7 +23,7 @@ func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit) err
 	_, err := f.client.PutObject(
 		ctx,
 		f.bucket,
-		file.InfoID,
+		file.Name,
 		file.Payload,
 		file.Size,
 		minio.PutObjectOptions{ContentType: file.ContentType},
@@ -58,7 +57,6 @@ func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.File
 	if err != nil {
 		return nil, err
 	}
-	//defer obj.Close()
 
 	stat, err := obj.Stat()
 	if err != nil {
@@ -66,28 +64,13 @@ func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.File
 	}
 
 	file := &models.FileUnit{
-		InfoID:      id,
+		Name:        id,
 		Payload:     obj,
 		Size:        stat.Size,
 		ContentType: stat.ContentType,
 	}
 
 	return file, nil
-}
-
-func (f *FileStorage) GetDownloadFileURL(ctx context.Context, id string) (string, error) {
-	url, err := f.client.PresignedGetObject(
-		ctx,
-		f.bucket,
-		id,
-		time.Hour,
-		nil,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	return url.String(), nil
 }
 
 func (f *FileStorage) GetBucketName() string {
