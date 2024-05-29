@@ -104,7 +104,7 @@ func init() {
 
 	secret = os.Getenv("SECRET")
 	if secret == "" {
-		log.Fatal("Missing secret in environvent variables")
+		log.Fatal("Missing secret")
 	}
 
 	origins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
@@ -119,12 +119,12 @@ func init() {
 
 	connCount, err = strconv.Atoi(os.Getenv("CONNECT_COUNT"))
 	if err != nil {
-		log.Fatal("Can't parse port: ", err)
+		log.Fatal("Can't parse connection count: ", err)
 	}
 
 	ssl, err = strconv.ParseBool(os.Getenv("SSL"))
 	if err != nil {
-		log.Fatal("Can't parse port: ", err)
+		log.Fatal("Can't parse ssl: ", err)
 	}
 
 	minioUser = os.Getenv("MINIO_USER")
@@ -264,10 +264,10 @@ func main() {
 	redactionRouter.DELETE("/delete/:id", authMiddleware, redactionHandler.Delete)
 
 	fileRouter := router.Group("/files")
-	fileRouter.GET("/download/:filePathId", fileHandler.DownloadFile)
+	fileRouter.GET("/download/:fileID", fileHandler.DownloadFile)
 
-	fileRouter.DELETE("/delete/:filePathId", fileHandler.DeleteFile)
-	fileRouter.POST("/upload/:resourceType", fileHandler.UploadFile)
+	fileRouter.DELETE("/delete/:fileID", authMiddleware, fileHandler.DeleteFile)
+	fileRouter.POST("/upload/", authMiddleware, fileHandler.UploadFile)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

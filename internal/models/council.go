@@ -7,7 +7,7 @@ import (
 type CouncilMemberCreate struct {
 	Name        Text      `json:"name" bson:"name" binding:"required"`
 	Email       string    `json:"email" bson:"email" binding:"required,email"`
-	ImagePathId string    `json:"imagePathId" bson:"imagePathId" binding:"required"`
+	ImageID     string    `json:"imageID" bson:"imageID" binding:"required"`
 	ScopusURL   string    `json:"scopus" bson:"scopus" binding:"required,url"`
 	Description Text      `json:"description" bson:"description" binding:"required"`
 	Content     Text      `json:"content" bson:"content" binding:"required"`
@@ -20,7 +20,7 @@ type CouncilMemberRead struct {
 	Id          int       `json:"id" bson:"_id" binding:"required"`
 	Name        Text      `json:"name" bson:"name" binding:"required"`
 	Email       string    `json:"email" bson:"email" binding:"required,email"`
-	ImagePathId string    `json:"imagePathId" bson:"imagePathId" binding:"required"`
+	ImageID     string    `json:"imageID" bson:"imageID" binding:"required"`
 	ScopusURL   string    `json:"scopus" bson:"scopus" binding:"required,url"`
 	Description Text      `json:"description" bson:"description" binding:"required"`
 	Content     Text      `json:"content" bson:"content" binding:"required"`
@@ -32,7 +32,7 @@ type CouncilMemberRead struct {
 type CouncilMemberUpdate struct {
 	Name        Text      `json:"name" bson:"name,omitempty" binding:"-"`
 	Email       string    `json:"email" bson:"email,omitempty" binding:"omitempty,email"`
-	ImagePathId string    `json:"imagePathId" bson:"imagePathId,omitempty" binding:"-"`
+	ImageID     string    `json:"imageID" bson:"imageID,omitempty" binding:"-"`
 	ScopusURL   string    `json:"scopus" bson:"scopus,omitempty" binding:"omitempty,url"`
 	Description Text      `json:"description" bson:"description,omitempty" binding:"-"`
 	Content     Text      `json:"content" bson:"content,omitempty" binding:"-"`

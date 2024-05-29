@@ -58,8 +58,8 @@ func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, erro
 		article.Content.Eng,
 		pq.Array(keywordsRu),
 		pq.Array(keywordsEn),
-		article.FilePathId,
-		article.VideoPathId,
+		article.DocumentID,
+		article.VideoID,
 		pq.Array(article.Literature),
 		article.Reference.Ru,
 		article.Reference.Eng,
@@ -106,8 +106,8 @@ func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) 
 			&article.Content.Eng,
 			&keywordsRu,
 			&keywordsEn,
-			&article.FilePathId,
-			&article.VideoPathId,
+			&article.DocumentID,
+			&article.VideoID,
 			&literatureArray,
 			&article.Reference.Ru,
 			&article.Reference.Eng,
@@ -165,8 +165,8 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 		&article.Content.Eng,
 		&keywordsRu,
 		&keywordsEn,
-		&article.FilePathId,
-		&article.VideoPathId,
+		&article.DocumentID,
+		&article.VideoID,
 		&literatureArray,
 		&article.Reference.Ru,
 		&article.Reference.Eng,
@@ -208,36 +208,36 @@ func (as *ArticleStorage) Delete(IdStr string) error {
 	return err
 }
 
-func (as *ArticleStorage) GetFilePathId(idStr string) (string, error) {
+func (as *ArticleStorage) GetDocumentID(idStr string) (string, error) {
 	query := fmt.Sprintf(
 		"SELECT file_path FROM %s WHERE id = $1",
 		as.table,
 	)
 	row := as.db.QueryRow(query, idStr)
 
-	var filePathId string
-	err := row.Scan(&filePathId)
+	var documentID string
+	err := row.Scan(&documentID)
 	if err != nil {
 		return "", err
 	}
 
-	return filePathId, nil
+	return documentID, nil
 }
 
-func (as *ArticleStorage) GetVideoPathId(idStr string) (string, error) {
+func (as *ArticleStorage) GetVideoID(idStr string) (string, error) {
 	query := fmt.Sprintf(
 		"SELECT video_path FROM %s WHERE id = $1",
 		as.table,
 	)
 	row := as.db.QueryRow(query, idStr)
 
-	var filePathId string
-	err := row.Scan(&filePathId)
+	var videoID string
+	err := row.Scan(&videoID)
 	if err != nil {
 		return "", err
 	}
 
-	return filePathId, nil
+	return videoID, nil
 }
 
 func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
@@ -278,8 +278,8 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 		&newArticle.Content.Eng,
 		&keywordsRu,
 		&keywordsEn,
-		&newArticle.FilePathId,
-		&newArticle.VideoPathId,
+		&newArticle.DocumentID,
+		&newArticle.VideoID,
 		&newArticle.Literature,
 		&newArticle.Reference.Ru,
 		&newArticle.Reference.Eng,

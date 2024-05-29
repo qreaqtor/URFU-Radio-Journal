@@ -83,37 +83,10 @@ func (e *EditionHandler) UpdateEdition(ctx *gin.Context) {
 
 func (e *EditionHandler) DeleteEdition(ctx *gin.Context) {
 	editionId := ctx.Param("id")
-	// edition, err := e.editions.Get(editionIdStr)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// if err := e.deleteContent(edition); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
+
 	if err := e.editions.Delete(editionId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
-
-// func (e *EditionHandler) deleteContent(edition models.EditionRead) error {
-// 	if err := e.deleteArticles(edition.Id); err != nil {
-// 		return err
-// 	}
-// 	toDelete := []primitive.ObjectID{edition.CoverPathId, edition.VideoPathId, edition.FilePathId}
-// 	filter := bson.M{"_id": bson.M{"$in": toDelete}}
-// 	err := e.deleteFiles(filter)
-// 	return err
-// }
-
-// func (e *EditionHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-// 	publicRg.GET("/get/all", e.getAllEditions)
-// 	publicRg.GET("/get/:editionId", e.getEditionById)
-
-// 	adminRg.POST("/create", e.createEdition)
-// 	adminRg.PUT("/update", e.updateEdition)
-// 	adminRg.DELETE("/delete/:id", e.deleteEdition)
-// }

@@ -80,18 +80,7 @@ func (a *ArticleHandler) Update(ctx *gin.Context) {
 
 func (a *ArticleHandler) Delete(ctx *gin.Context) {
 	articleId := ctx.Param("id")
-	//articleId, err := primitive.ObjectIDFromHex(articleIdStr)
-	// filePathId, err := a.articles.GetFilePathId(articleId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// articlesFilter := bson.M{"articleId": articleId}
-	// filePathsFilter := bson.M{"_id": filePathId}
-	// if err := a.deleteContent(articlesFilter, filePathsFilter); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
+
 	if err := a.articles.Delete(articleId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

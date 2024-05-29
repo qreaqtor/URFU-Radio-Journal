@@ -35,14 +35,6 @@ func (cs *CouncilService) Delete(id string) error {
 	return cs.repo.Delete(id)
 }
 
-// func (cs *CouncilService) GetImagePathId(id string) (imagePathId string, err error) {
-// 	var member models.CouncilMemberRead
-// 	filter := bson.M{"_id": id}
-// 	err = cs.repo.FindOne(cs.ctx, filter).Decode(&member)
-// 	imagePathId = member.ImagePathId
-// 	return
-// }
-
 func (cs *CouncilService) GetAll() ([]*models.CouncilMemberRead, error) {
 	return cs.repo.GetAll()
 }

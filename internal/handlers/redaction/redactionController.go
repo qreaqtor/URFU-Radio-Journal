@@ -79,33 +79,10 @@ func (r *RedactionHandler) GetMemberById(ctx *gin.Context) {
 
 func (r *RedactionHandler) Delete(ctx *gin.Context) {
 	memberId := ctx.Param("id")
-	// memberId, err := primitive.ObjectIDFromHex(memberIdStr)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// imagePathId, err := c.members.GetImagePathId(memberId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// filter := bson.M{"_id": imagePathId}
-	// if err := c.deleteFiles(filter); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
+
 	if err := r.members.Delete(memberId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
-
-// func (c *CouncilHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-// 	publicRg.GET("/get/all", c.getAll)
-// 	publicRg.GET("/get/:memberId", c.getMemberById)
-
-// 	adminRg.POST("/create", c.create)
-// 	adminRg.PUT("/update/:id", c.update)
-// 	adminRg.DELETE("/delete/:id", c.delete)
-// }

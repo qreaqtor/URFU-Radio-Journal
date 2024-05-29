@@ -76,11 +76,6 @@ func (as *AuthService) ValidateToken(tokenIn string) error {
 		return errNoPayload
 	}
 
-	iat, ok := payload["iat"].(int64)
-	if !ok || time.Now().Unix() < iat {
-		return errBadPayload
-	}
-
 	username, ok := payload["username"].(string)
 	if !ok {
 		return errBadPayload

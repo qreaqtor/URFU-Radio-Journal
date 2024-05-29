@@ -50,7 +50,7 @@ func (rs *RedactionStorage) InsertOne(member *models.RedactionMemberCreate) (str
 		member.Location.Ru,
 		member.Location.Eng,
 		member.Email,
-		member.ImagePathId,
+		member.ImageID,
 		member.DateJoin,
 		member.Rank,
 		member.Content.Ru,
@@ -95,7 +95,7 @@ func (rs *RedactionStorage) UpdateOne(memberIdStr string, memberUpdate *models.R
 		memberUpdate.Location.Ru,
 		memberUpdate.Location.Eng,
 		memberUpdate.Email,
-		memberUpdate.ImagePathId,
+		memberUpdate.ImageID,
 		memberUpdate.DateJoin,
 		memberUpdate.Rank,
 		memberUpdate.Content.Ru,
@@ -123,8 +123,8 @@ func (rs *RedactionStorage) Delete(idStr string) error {
 	return nil
 }
 
-func (rs *RedactionStorage) GetImagePathId(idStr string) (string, error) {
-	var imagePathId string
+func (rs *RedactionStorage) GetImageID(idStr string) (string, error) {
+	var imageID string
 
 	query := fmt.Sprintf(
 		"SELECT photo_path FROM %s WHERE member_id = $1",
@@ -132,12 +132,12 @@ func (rs *RedactionStorage) GetImagePathId(idStr string) (string, error) {
 	)
 
 	row := rs.db.QueryRow(query, idStr)
-	err := row.Scan(&imagePathId)
+	err := row.Scan(&imageID)
 
 	if err != nil {
 		return "", err
 	}
-	return imagePathId, nil
+	return imageID, nil
 }
 
 func (rs *RedactionStorage) GetAll() ([]*models.RedactionMemberRead, error) {
@@ -168,7 +168,7 @@ func (rs *RedactionStorage) GetAll() ([]*models.RedactionMemberRead, error) {
 			&member.Location.Ru,
 			&member.Location.Eng,
 			&member.Email,
-			&member.ImagePathId,
+			&member.ImageID,
 			&member.DateJoin,
 			&member.Rank,
 			&member.Content.Ru,
@@ -208,7 +208,7 @@ func (rs *RedactionStorage) FindOne(memberIdStr string) (*models.RedactionMember
 		&member.Location.Ru,
 		&member.Location.Eng,
 		&member.Email,
-		&member.ImagePathId,
+		&member.ImageID,
 		&member.DateJoin,
 		&member.Rank,
 		&member.Content.Ru,

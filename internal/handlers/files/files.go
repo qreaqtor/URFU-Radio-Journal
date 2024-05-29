@@ -14,24 +14,18 @@ type service interface {
 	DeleteFile(context.Context, string) error
 }
 
-type FilePathsHandler struct {
+type FilesHandler struct {
 	files service
 }
 
-func NewFilesHandler(files service) *FilePathsHandler {
-	return &FilePathsHandler{
+func NewFilesHandler(files service) *FilesHandler {
+	return &FilesHandler{
 		files: files,
 	}
 }
 
-func (fp *FilePathsHandler) UploadFile(ctx *gin.Context) {
-	fileHeader, err := ctx.FormFile("file")
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
-
-	file, err := fileHeader.Open()
+func (fp *FilesHandler) UploadFile(ctx *gin.Context) {
+	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -39,12 +33,12 @@ func (fp *FilePathsHandler) UploadFile(ctx *gin.Context) {
 	defer file.Close()
 
 	fileInfo := &models.FileInfo{
-		Filename: fileHeader.Filename,
+		Filename: header.Filename,
 	}
 	fileUnit := &models.FileUnit{
 		Payload:     file,
-		ContentType: ctx.ContentType(),
-		Size:        fileHeader.Size,
+		ContentType: header.Header.Get("Content-Type"),
+		Size:        header.Size,
 	}
 
 	id, err := fp.files.UploadFile(ctx.Request.Context(), fileUnit, fileInfo)
@@ -59,7 +53,7 @@ func (fp *FilePathsHandler) UploadFile(ctx *gin.Context) {
 	})
 }
 
-func (fp *FilePathsHandler) DownloadFile(ctx *gin.Context) {
+func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 	fileID := ctx.Param("fileID")
 
 	fileUnit, err := fp.files.DownloadFile(ctx, fileID)
@@ -77,27 +71,9 @@ func (fp *FilePathsHandler) DownloadFile(ctx *gin.Context) {
 
 	ctx.Header("Content-Disposition", "attachment")
 	ctx.Data(http.StatusOK, fileUnit.ContentType, buf)
-	// downloadStr := ctx.Query("download")
-	// if downloadStr != "" {
-	// 	download, err := strconv.ParseBool(downloadStr)
-	// 	if err != nil {
-	// 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 		return
-	// 	}
-	// 	if download {
-	// 		ctx.Header("Content-Disposition", "attachment")
-	// 	}
-	// }
-	// filePathId := ctx.Param("filePathId")
-	// path, err := fp.filePaths.CheckFilePath(filePathId)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
-	// ctx.File(path)
 }
 
-func (fp *FilePathsHandler) DeleteFile(ctx *gin.Context) {
+func (fp *FilesHandler) DeleteFile(ctx *gin.Context) {
 	fileID := ctx.Param("fileID")
 
 	err := fp.files.DeleteFile(ctx.Request.Context(), fileID)
@@ -108,12 +84,3 @@ func (fp *FilePathsHandler) DeleteFile(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
-
-// func (fp *FilePathsHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-// 	publicRg.GET("/get/:filePathId", fp.getFile)
-// 	publicRg.GET("/get/requirements", fp.getRequirements)
-
-// 	adminRg.DELETE("/delete/:filePathId", fp.delete)
-// 	adminRg.PUT("/update/:filePathId", fp.updateFile)
-// 	adminRg.POST("/upload/:resourceType", fp.uploadFile)
-// }

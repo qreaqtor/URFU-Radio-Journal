@@ -50,7 +50,7 @@ func (cs *CouncilStorage) InsertOne(member *models.CouncilMemberCreate) (string,
 		member.Location.Eng,
 		member.Email,
 		member.ScopusURL,
-		member.ImagePathId,
+		member.ImageID,
 		member.DateJoin,
 		member.Rank,
 		member.Content.Ru,
@@ -97,7 +97,7 @@ func (cs *CouncilStorage) UpdateOne(memberIdStr string, memberUpdate *models.Cou
 		memberUpdate.Location.Eng,
 		memberUpdate.Email,
 		memberUpdate.ScopusURL,
-		memberUpdate.ImagePathId,
+		memberUpdate.ImageID,
 		memberUpdate.DateJoin,
 		memberUpdate.Rank,
 		memberUpdate.Content.Ru,
@@ -125,8 +125,8 @@ func (cs *CouncilStorage) Delete(idStr string) error {
 	return nil
 }
 
-func (cs *CouncilStorage) GetImagePathId(idStr string) (string, error) {
-	var imagePathId string
+func (cs *CouncilStorage) GetImageID(idStr string) (string, error) {
+	var imageID string
 
 	query := fmt.Sprintf(
 		"SELECT photo_path FROM %s WHERE member_id = $1",
@@ -134,13 +134,13 @@ func (cs *CouncilStorage) GetImagePathId(idStr string) (string, error) {
 	)
 
 	row := cs.db.QueryRow(query, idStr)
-	err := row.Scan(&imagePathId)
+	err := row.Scan(&imageID)
 
 	if err != nil {
 		return "", err
 	}
 
-	return imagePathId, nil
+	return imageID, nil
 }
 
 func (cs *CouncilStorage) GetAll() ([]*models.CouncilMemberRead, error) {
@@ -170,7 +170,7 @@ func (cs *CouncilStorage) GetAll() ([]*models.CouncilMemberRead, error) {
 			&member.Location.Eng,
 			&member.Email,
 			&member.ScopusURL,
-			&member.ImagePathId,
+			&member.ImageID,
 			&member.DateJoin,
 			&member.Rank,
 			&member.Content.Ru,
@@ -210,7 +210,7 @@ func (cs *CouncilStorage) FindOne(memberIdStr string) (*models.CouncilMemberRead
 		&member.Location.Eng,
 		&member.Email,
 		&member.ScopusURL,
-		&member.ImagePathId,
+		&member.ImageID,
 		&member.DateJoin,
 		&member.Rank,
 		&member.Content.Ru,

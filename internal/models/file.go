@@ -11,5 +11,5 @@ type FileUnit struct {
 
 type FileInfo struct {
 	Filename   string
-	BacketName string // this field sets in service
+	BucketName string // this field sets in service
 }

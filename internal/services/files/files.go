@@ -31,7 +31,7 @@ func (f *FileService) UploadFile(ctx context.Context, fileUnit *models.FileUnit,
 	if err != nil {
 		return "", err
 	}
-	fileInfo.BacketName = bucket.GetBucketName()
+	fileInfo.BucketName = bucket.GetBucketName()
 
 	id, err := f.filesInfo.InsertOne(fileInfo)
 	if err != nil {
@@ -58,7 +58,7 @@ func (f *FileService) DownloadFile(ctx context.Context, id string) (*models.File
 		return nil, err
 	}
 
-	bucket, err := f.buckets.GetBucketByName(info.BacketName)
+	bucket, err := f.buckets.GetBucketByName(info.BucketName)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (f *FileService) DeleteFile(ctx context.Context, id string) error {
 		return err
 	}
 
-	bucket, err := f.buckets.GetBucketByName(info.BacketName)
+	bucket, err := f.buckets.GetBucketByName(info.BucketName)
 	if err != nil {
 		return err
 	}

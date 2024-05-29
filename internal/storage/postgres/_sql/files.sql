@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS "fileinfo";
 CREATE TABLE "fileinfo" (
-    "file_id" integer PRIMARY KEY,
+    "file_id" SERIAL PRIMARY KEY,
     "filename" character varying(1000),
-    "backet" integer NOT NULL
+    "bucket" character varying(1000)
 );

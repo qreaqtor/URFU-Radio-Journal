@@ -30,8 +30,8 @@ func (es *EditionStorage) InsertOne(edition *models.EditionCreate) (string, erro
 		edition.Year,
 		edition.Number,
 		edition.Volume,
-		edition.CoverPathId,
-		edition.FilePathId,
+		edition.ImageID,
+		edition.DocumentID,
 		edition.Date,
 	)
 
@@ -58,7 +58,7 @@ func (es *EditionStorage) GetAll() ([]*models.EditionRead, error) {
 	for rows.Next() {
 		var edition models.EditionRead
 
-		err := rows.Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.CoverPathId, &edition.FilePathId, &edition.Date)
+		err := rows.Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.ImageID, &edition.DocumentID, &edition.Date)
 
 		if err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func (es *EditionStorage) FindOne(id string) (*models.EditionRead, error) {
 		es.table,
 	)
 	err := es.db.QueryRow(query, id).
-		Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.CoverPathId, &edition.FilePathId, &edition.Date)
+		Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.ImageID, &edition.DocumentID, &edition.Date)
 
 	if err != nil {
 		return nil, err
@@ -99,8 +99,8 @@ func (es *EditionStorage) UpdateOne(newEdition *models.EditionUpdate) error {
 		newEdition.Year,
 		newEdition.Number,
 		newEdition.Volume,
-		newEdition.CoverPathId,
-		newEdition.FilePathId,
+		newEdition.ImageID,
+		newEdition.DocumentID,
 		newEdition.Id,
 	)
 	if err != nil {

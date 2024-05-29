@@ -20,14 +20,14 @@ func NewFileInfoStorage(db *sql.DB, table string) *FileInfoStorage {
 
 func (f *FileInfoStorage) InsertOne(fileInfo *models.FileInfo) (string, error) {
 	query := fmt.Sprintf(
-		"INSERT INTO %s (filename, backet) VALUES ($1, $2) RETURNING file_id",
+		"INSERT INTO %s (filename, bucket) VALUES ($1, $2) RETURNING file_id",
 		f.table,
 	)
 
 	row := f.db.QueryRow(
 		query,
 		fileInfo.Filename,
-		fileInfo.BacketName,
+		fileInfo.BucketName,
 	)
 
 	var id string
@@ -57,14 +57,14 @@ func (f *FileInfoStorage) DeleteOne(id string) error {
 
 func (f *FileInfoStorage) FindOne(id string) (*models.FileInfo, error) {
 	query := fmt.Sprintf(
-		"SELECT filename, backet FROM %s WHERE file_id = $1",
+		"SELECT filename, bucket FROM %s WHERE file_id = $1",
 		f.table,
 	)
 
 	row := f.db.QueryRow(query, id)
 
 	fileInfo := &models.FileInfo{}
-	err := row.Scan(&fileInfo.Filename, &fileInfo.BacketName)
+	err := row.Scan(&fileInfo.Filename, &fileInfo.BucketName)
 	if err != nil {
 		return nil, err
 	}

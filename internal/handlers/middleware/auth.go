@@ -33,7 +33,7 @@ func AuthMiddleware(validateToken func(string) error) gin.HandlerFunc {
 
 func extractToken(ctx *gin.Context) (string, error) {
 	bearerToken := ctx.Request.Header.Get("Authorization")
-	token := strings.TrimSpace(strings.TrimPrefix(bearerToken, "Bearer: "))
+	token := strings.TrimPrefix(bearerToken, "Bearer: ")
 	if token == "" {
 		return "", errEmptyToken
 	}
