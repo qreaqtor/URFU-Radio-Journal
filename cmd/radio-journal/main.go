@@ -71,7 +71,7 @@ var (
 const (
 	articlesTable  = "articles"
 	commentsTable  = "comments"
-	counsilTable   = "counsil"
+	counsilTable   = "counсil"
 	editionsTable  = "editions"
 	redactionTable = "redaction"
 	authorsTable   = "authors"
@@ -222,7 +222,7 @@ func main() {
 	engine := gin.Default()
 	engine.Use(cors.New(config))
 
-	router := engine.Group(fmt.Sprintf("/api/v%d",apiVersion))
+	router := engine.Group(fmt.Sprintf("/api/v%d", apiVersion))
 
 	authMiddleware := middleware.AuthMiddleware(authService.ValidateToken)
 
