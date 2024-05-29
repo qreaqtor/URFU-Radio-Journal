@@ -71,7 +71,7 @@ var (
 const (
 	articlesTable  = "articles"
 	commentsTable  = "comments"
-	counsilTable   = "counсil"
+	counsilTable   = "council"
 	editionsTable  = "editions"
 	redactionTable = "redaction"
 	authorsTable   = "authors"
