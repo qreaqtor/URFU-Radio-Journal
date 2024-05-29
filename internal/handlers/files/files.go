@@ -10,7 +10,7 @@ import (
 )
 
 type service interface {
-	UploadFile(context.Context, *models.FileUnit, *models.FileInfo) (string, error)
+	UploadFile(context.Context, *models.FileUnit) (string, error)
 	DownloadFile(context.Context, string) (*models.FileUnit, error)
 	DeleteFile(context.Context, string) error
 }
@@ -33,16 +33,13 @@ func (fp *FilesHandler) UploadFile(ctx *gin.Context) {
 	}
 	defer file.Close()
 
-	fileInfo := &models.FileInfo{
-		Filename: header.Filename,
-	}
 	fileUnit := &models.FileUnit{
 		Payload:     file,
 		ContentType: header.Header.Get("Content-Type"),
 		Size:        header.Size,
 	}
 
-	id, err := fp.files.UploadFile(ctx.Request.Context(), fileUnit, fileInfo)
+	id, err := fp.files.UploadFile(ctx.Request.Context(), fileUnit)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -70,7 +67,7 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("Content-Disposition", "inline; filename="+fileUnit.Name)
+	//ctx.Header("Content-Disposition", "attachment")
 	ctx.Header("Content-Type", fileUnit.ContentType)
 }
 

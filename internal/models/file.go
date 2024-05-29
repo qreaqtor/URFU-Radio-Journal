@@ -8,8 +8,3 @@ type FileUnit struct {
 	Size        int64
 	ContentType string
 }
-
-type FileInfo struct {
-	Filename   string
-	BucketName string // this field sets in service
-}
