@@ -19,11 +19,11 @@ func NewFileStorage(client *minio.Client, bucketName string) *FileStorage {
 	}
 }
 
-func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit) error {
+func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit, id string) error {
 	_, err := f.client.PutObject(
 		ctx,
 		f.bucket,
-		file.Name,
+		id,
 		file.Payload,
 		file.Size,
 		minio.PutObjectOptions{ContentType: file.ContentType},
@@ -64,7 +64,6 @@ func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.File
 	}
 
 	file := &models.FileUnit{
-		Name:        id,
 		Payload:     obj,
 		Size:        stat.Size,
 		ContentType: stat.ContentType,

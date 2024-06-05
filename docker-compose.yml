@@ -47,6 +47,7 @@ services:
       CONNECT_COUNT: ${CONNECT_COUNT}
       SSL: ${SSL}
       API_VERSION: ${API_VERSION}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE}
     ports:
       - '8080:${PORT}'
     depends_on:

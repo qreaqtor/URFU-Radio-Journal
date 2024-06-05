@@ -2,6 +2,7 @@ package filehand
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"urfu-radio-journal/internal/models"
@@ -67,7 +68,7 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	//ctx.Header("Content-Disposition", "attachment")
+	ctx.Header("Content-Length", fmt.Sprint(fileUnit.Size))
 	ctx.Header("Content-Type", fileUnit.ContentType)
 }
 

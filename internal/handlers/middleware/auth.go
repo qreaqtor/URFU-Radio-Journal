@@ -13,7 +13,7 @@ var (
 	errEmptyToken = errors.New("empty token")
 )
 
-func AuthMiddleware(validateToken func(string) error) gin.HandlerFunc {
+func Auth(validateToken func(string) error) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token, err := extractToken(ctx)
 		if err != nil {

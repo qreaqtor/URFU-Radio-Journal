@@ -12,7 +12,7 @@ var (
 )
 
 type FileRepo interface {
-	UploadFile(context.Context, *models.FileUnit) error
+	UploadFile(context.Context, *models.FileUnit, string) error
 	DeleteFile(context.Context, string) error
 	DownloadFile(context.Context, string) (*models.FileUnit, error)
 	GetBucketName() string

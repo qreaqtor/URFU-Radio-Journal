@@ -38,6 +38,7 @@ import (
 	postgrest "urfu-radio-journal/internal/storage/postgres/setup"
 
 	"github.com/gin-contrib/cors"
+	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 )
 
@@ -66,6 +67,8 @@ var (
 
 	minioUser, minioPassword, minioEndpoint string
 	ssl                                     bool
+
+	maxSize int64 // in bytes
 )
 
 const (
@@ -148,6 +151,11 @@ func init() {
 	if minioEndpoint == "" {
 		log.Fatal("Missing minio endpoint in environment variables")
 	}
+
+	maxSize, err = strconv.ParseInt(os.Getenv("MAX_FILE_SIZE"), 10, 64)
+	if err != nil {
+		log.Fatal("Can't parse max file size: ", err)
+	}
 }
 
 func main() {
@@ -181,7 +189,7 @@ func main() {
 	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
-	config.AddAllowHeaders("Authorization", "Content-Type")
+	config.AddAllowHeaders("Authorization", "Content-Type", "Content-Length")
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
@@ -222,9 +230,9 @@ func main() {
 	engine := gin.Default()
 	engine.Use(cors.New(config))
 
-	router := engine.Group(fmt.Sprintf("/api/v%d",apiVersion))
+	router := engine.Group(fmt.Sprintf("/api/v%d", apiVersion))
 
-	authMiddleware := middleware.AuthMiddleware(authService.ValidateToken)
+	authMiddleware := middleware.Auth(authService.ValidateToken)
 
 	// тут роутов
 	articleRouter := router.Group("/article")
@@ -274,7 +282,7 @@ func main() {
 	fileRouter.GET("/download/:fileID", fileHandler.DownloadFile)
 
 	fileRouter.DELETE("/delete/:fileID", authMiddleware, fileHandler.DeleteFile)
-	fileRouter.POST("/upload/", authMiddleware, fileHandler.UploadFile)
+	fileRouter.POST("/upload/", authMiddleware, limits.RequestSizeLimiter(maxSize), fileHandler.UploadFile)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
