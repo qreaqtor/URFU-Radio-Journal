@@ -163,7 +163,7 @@ func (cs *CouncilStorage) GetAll() ([]*models.CouncilMemberRead, error) {
 		err = rows.Scan(
 			&member.Id,
 			&member.Name.Ru,
-			&member.Name.Ru,
+			&member.Name.Eng,
 			&member.Description.Ru,
 			&member.Description.Eng,
 			&member.Location.Ru,
@@ -203,7 +203,7 @@ func (cs *CouncilStorage) FindOne(memberIdStr string) (*models.CouncilMemberRead
 	err := row.Scan(
 		&member.Id,
 		&member.Name.Ru,
-		&member.Name.Ru,
+		&member.Name.Eng,
 		&member.Description.Ru,
 		&member.Description.Eng,
 		&member.Location.Ru,

@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS "redaction";
 CREATE TABLE "redaction" (
-    "member_id" integer NOT NULL,
+    "member_id" integer NOT NULL PRIMARY KEY,
     "fullname_ru" character varying(1000) NOT NULL,
     "fullname_en" character varying(1000) NOT NULL,
     "description_ru" character varying(1000) NOT NULL,
@@ -13,4 +13,13 @@ CREATE TABLE "redaction" (
     "content_ru" character varying(1000) NOT NULL,
     "content_en" character varying(1000) NOT NULL,
     "location_en" character varying(1000) NOT NULL
+);
+
+ALTER TABLE "redaction" ALTER COLUMN "member_id" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME "redaction_member_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
 );

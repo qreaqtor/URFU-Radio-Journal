@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS "council";
 CREATE TABLE "council" (
-    "member_id" integer NOT NULL,
+    "member_id" integer NOT NULL PRIMARY KEY,
     "fullname_ru" character varying(1000) NOT NULL,
     "fullname_en" character varying(1000) NOT NULL,
     "description_ru" character varying(1000) NOT NULL,
@@ -14,4 +14,14 @@ CREATE TABLE "council" (
     "content_ru" text NOT NULL,
     "content_en" text NOT NULL,
     "location_en" character varying(1000) NOT NULL
+);
+
+
+ALTER TABLE "council" ALTER COLUMN "member_id" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME "council_member_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
 );
