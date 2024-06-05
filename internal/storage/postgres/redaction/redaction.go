@@ -162,7 +162,7 @@ func (rs *RedactionStorage) GetAll() ([]*models.RedactionMemberRead, error) {
 		err = rows.Scan(
 			&member.Id,
 			&member.Name.Ru,
-			&member.Name.Ru,
+			&member.Name.Eng,
 			&member.Description.Ru,
 			&member.Description.Eng,
 			&member.Location.Ru,
@@ -202,7 +202,7 @@ func (rs *RedactionStorage) FindOne(memberIdStr string) (*models.RedactionMember
 	err := row.Scan(
 		&member.Id,
 		&member.Name.Ru,
-		&member.Name.Ru,
+		&member.Name.Eng,
 		&member.Description.Ru,
 		&member.Description.Eng,
 		&member.Location.Ru,
