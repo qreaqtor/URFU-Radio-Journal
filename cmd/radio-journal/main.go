@@ -61,11 +61,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if conf.Env == "prod" {
-		gin.SetMode(gin.ReleaseMode)
-	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+
+	server, err := getServerWithConf(ctx, cancel, conf)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	dbPostgres, err := postgrest.GetConnect(conf.PostgresConfig, conf.Ssl)
 	if err != nil {
@@ -91,11 +93,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	config := cors.DefaultConfig()
-	config.AllowOrigins = conf.Origins
-	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowCredentials = true
-	config.AddAllowHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition")
+	corsConf := cors.DefaultConfig()
+	corsConf.AllowOrigins = conf.Origins
+	corsConf.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	corsConf.AllowCredentials = true
+	corsConf.AddAllowHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition")
 
 	monitoring := monitoring.NewMonitoring()
 
@@ -136,7 +138,7 @@ func main() {
 	fileHandler := filehand.NewFilesHandler(fileService, monitoring)
 
 	engine := gin.Default()
-	engine.Use(cors.New(config))
+	engine.Use(cors.New(corsConf))
 
 	engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
@@ -194,12 +196,27 @@ func main() {
 	fileRouter.DELETE("/delete/:fileID", authMiddleware, fileHandler.DeleteFile)
 	fileRouter.POST("/upload/", authMiddleware, limits.RequestSizeLimiter(conf.MaxFileSize), fileHandler.UploadFile)
 
+	server.Handler = engine.Handler()
+
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+const (
+	prod = "prod"
+	dev  = "dev"
+)
+
+// This func not set handler for server
+func getServerWithConf(ctx context.Context, cancel context.CancelFunc, conf *config.ServerConfig) (*http.Server, error) {
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", conf.Port),
-		Handler: engine.Handler(),
+		Addr: fmt.Sprintf(":%d", conf.Port),
 	}
 
-	if conf.Env == "local" {
+	switch conf.Env {
+	case dev:
 		go func(cancel context.CancelFunc) {
 			fmt.Scanln()
 			cancel()
@@ -209,10 +226,11 @@ func main() {
 			<-ctx.Done()
 			server.Shutdown(ctx)
 		}(server, ctx)
+	case prod:
+		gin.SetMode(gin.ReleaseMode)
+	default:
+		return nil, fmt.Errorf("bad env value in configuration file")
 	}
 
-	err = server.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return server, nil
 }

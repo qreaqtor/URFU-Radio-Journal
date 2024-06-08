@@ -8,9 +8,11 @@ then
     export $(cat $FILE | tr -d '\r' | sed 's/#.*//g' | xargs)
 fi
 
-if [[ $ENV == 'local' ]]; then
+if [[ $ENV == 'dev' ]]; then
     docker-compose up -d minio postgres prometheus grafana
 else
+    export CONFIG_PATH=$FILE
+    echo $CONFIG_PATH
     docker-compose up -d
 fi
 
