@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
-	"strings"
 
+	"urfu-radio-journal/internal/config"
 	articlehand "urfu-radio-journal/internal/handlers/article"
 	authand "urfu-radio-journal/internal/handlers/auth"
 	commentshand "urfu-radio-journal/internal/handlers/comments"
@@ -47,31 +45,7 @@ const (
 	imagesBucket    = "images"
 	documentsBucket = "documents"
 
-	fileInfoTable = "fileinfo"
-)
-
-// для этого надо завести отдельный файл с конфигами
-var (
-	adminPassword, adminLogin, secret string
-	tokenLifetime                     int
-
-	origins []string
-
-	port int
-
-	apiVersion int
-
-	dbUser, dbPassword, dbHost, dbName string
-	dbPort                             int
-	connCount                          int
-
-	minioUser, minioPassword, minioEndpoint string
-	ssl                                     bool
-
-	maxSize int64 // in bytes
-)
-
-const (
+	fileInfoTable  = "fileinfo"
 	articlesTable  = "articles"
 	commentsTable  = "comments"
 	counsilTable   = "council"
@@ -80,88 +54,18 @@ const (
 	authorsTable   = "authors"
 )
 
-func init() {
-	var err error
-
-	dbPassword = os.Getenv("DB_PASSWORD")
-	dbUser = os.Getenv("DB_USER")
-	dbHost = os.Getenv("DB_HOST")
-	dbName = os.Getenv("DB_NAME")
-	dbPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
-	if err != nil {
-		log.Fatal("Can't parse dbPort: ", err)
-	}
-
-	adminPassword = os.Getenv("ADMIN_PASSWORD")
-	if adminPassword == "" {
-		log.Fatal("Missing admin password in environment variables")
-	}
-
-	adminLogin = os.Getenv("ADMIN_LOGIN")
-	if adminLogin == "" {
-		log.Fatal("Missing admin username in environment variables")
-	}
-
-	tokenLifetime, err = strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
-	if err != nil {
-		log.Fatal("Can't parse token lifetime: ", err)
-	}
-
-	secret = os.Getenv("SECRET")
-	if secret == "" {
-		log.Fatal("Missing secret")
-	}
-
-	origins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
-	if len(origins) == 0 {
-		log.Fatal("Missing allow origins")
-	}
-
-	port, err = strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		log.Fatal("Can't parse port: ", err)
-	}
-
-	apiVersion, err = strconv.Atoi(os.Getenv("API_VERSION"))
-	if err != nil {
-		log.Fatal("Can't parse apiVersion: ", err)
-	}
-
-	connCount, err = strconv.Atoi(os.Getenv("CONNECT_COUNT"))
-	if err != nil {
-		log.Fatal("Can't parse connection count: ", err)
-	}
-
-	ssl, err = strconv.ParseBool(os.Getenv("SSL"))
-	if err != nil {
-		log.Fatal("Can't parse ssl: ", err)
-	}
-
-	minioUser = os.Getenv("MINIO_USER")
-	if minioUser == "" {
-		log.Fatal("Missing minio username in environment variables")
-	}
-
-	minioPassword = os.Getenv("MINIO_PASSWORD")
-	if minioPassword == "" {
-		log.Fatal("Missing minio password in environment variables")
-	}
-
-	minioEndpoint = os.Getenv("MINIO_ENDPOINT")
-	if minioEndpoint == "" {
-		log.Fatal("Missing minio endpoint in environment variables")
-	}
-
-	maxSize, err = strconv.ParseInt(os.Getenv("MAX_FILE_SIZE"), 10, 64)
-	if err != nil {
-		log.Fatal("Can't parse max file size: ", err)
-	}
-}
-
 func main() {
-	ctx := context.Background()
+	conf, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if conf.Env == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	dbPostgres, err := postgrest.GetConnect(dbUser, dbPassword, dbHost, dbName, dbPort, connCount)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	dbPostgres, err := postgrest.GetConnect(conf.PostgresConfig, conf.Ssl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,7 +76,7 @@ func main() {
 		}
 	}(dbPostgres)
 
-	minioClient, err := miniost.GetConnect(minioUser, minioPassword, minioEndpoint, ssl)
+	minioClient, err := miniost.GetConnect(conf.MinioConfig, conf.Ssl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,10 +90,10 @@ func main() {
 	}
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = origins
+	config.AllowOrigins = conf.Origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowCredentials = true
-	config.AddAllowHeaders("Authorization", "Content-Type", "Content-Length")
+	config.AddAllowHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition")
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
@@ -211,7 +115,7 @@ func main() {
 
 	// тут всех сервисов
 	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
-	authService := authsrv.NewAuthService(adminPassword, adminLogin, secret, tokenLifetime)
+	authService := authsrv.NewAuthService(conf.AuthConfig)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)
 	editionService := editionsrv.NewEditionService(editionStorage)
@@ -230,7 +134,7 @@ func main() {
 	engine := gin.Default()
 	engine.Use(cors.New(config))
 
-	router := engine.Group(fmt.Sprintf("/api/v%d", apiVersion))
+	router := engine.Group(fmt.Sprintf("/api/v%d", conf.ApiVersion))
 
 	authMiddleware := middleware.Auth(authService.ValidateToken)
 
@@ -282,11 +186,23 @@ func main() {
 	fileRouter.GET("/download/:fileID", fileHandler.DownloadFile)
 
 	fileRouter.DELETE("/delete/:fileID", authMiddleware, fileHandler.DeleteFile)
-	fileRouter.POST("/upload/", authMiddleware, limits.RequestSizeLimiter(maxSize), fileHandler.UploadFile)
+	fileRouter.POST("/upload/", authMiddleware, limits.RequestSizeLimiter(conf.MaxFileSize), fileHandler.UploadFile)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    fmt.Sprintf(":%d", conf.Port),
 		Handler: engine.Handler(),
+	}
+
+	if conf.Env == "local" {
+		go func(cancel context.CancelFunc) {
+			fmt.Scanln()
+			cancel()
+		}(cancel)
+
+		go func(server *http.Server, ctx context.Context) {
+			<-ctx.Done()
+			server.Shutdown(ctx)
+		}(server, ctx)
 	}
 
 	err = server.ListenAndServe()

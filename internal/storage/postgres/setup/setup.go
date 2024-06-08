@@ -4,18 +4,25 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"urfu-radio-journal/internal/config"
 
 	_ "github.com/lib/pq"
 )
 
-func GetConnect(user, password, host, dbName string, port, tryConn int) (*sql.DB, error) {
+func GetConnect(conf config.PostgresConfig, ssl bool) (*sql.DB, error) {
+	sslMode := "disable"
+	if ssl {
+		sslMode = "enable"
+	}
+
 	connStr := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host,
-		port,
-		user,
-		password,
-		dbName,
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		conf.Host,
+		conf.Port,
+		conf.User,
+		conf.Password,
+		conf.DbName,
+		sslMode,
 	)
 
 	db, err := sql.Open("postgres", connStr)
@@ -23,20 +30,18 @@ func GetConnect(user, password, host, dbName string, port, tryConn int) (*sql.DB
 		return nil, fmt.Errorf("error while connecting to PostgreSQL: %v", err)
 	}
 
-	timer := time.NewTicker(time.Second)
-	for i := 1; i <= tryConn; i++ {
-		<-timer.C
-		err = db.Ping()
-		if err == nil {
+	tiker := time.NewTicker(time.Millisecond * 500)
+	for i := 0; i < conf.ConnAttempts; i++ {
+		_, ok := <-tiker.C
+		if !ok {
 			break
 		}
-		fmt.Printf("attempt %d to ping PostgreSQL: %v\n", i, err)
-	}
-	timer.Stop()
-	if err != nil {
-		return nil, fmt.Errorf("error while trying to ping PostgreSQL: %v", err)
+		err = db.Ping()
+		if err == nil {
+			tiker.Stop()
+			return db, nil
+		}
 	}
 
-	fmt.Println("Success connection to PostgreSQL!")
-	return db, nil
+	return nil, fmt.Errorf("can't connect to PostgreSQL")
 }

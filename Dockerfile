@@ -5,6 +5,7 @@ RUN go install ./cmd/radio-journal/
 
 FROM alpine AS run_stage
 WORKDIR /app_binary
+COPY --from=build_stage /go/src/radio-journal/prod.env /app_binary/
 COPY --from=build_stage /go/bin/radio-journal /app_binary/
 RUN chmod +x ./radio-journal
 ENTRYPOINT ./radio-journal

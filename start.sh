@@ -1,15 +1,20 @@
 #!/bin/bash
 
-CLEAR=$1
+FILE=$1
+CLEAR=$2
 
-if [ -f .env ]
+if [ -f $FILE ]
 then
-    export $(cat .env | tr -d '\r' | sed 's/#.*//g' | xargs)
+    export $(cat $FILE | tr -d '\r' | sed 's/#.*//g' | xargs)
 fi
 
-docker-compose up -d
+if [[ $ENV == 'local' ]]; then
+    docker-compose up -d minio postgres
+else
+    docker-compose up -d
+fi
 
-read
 if [[ $CLEAR == '-c' ]]; then
+    read
     docker-compose down -v && docker rmi urfu-radio-journal-radiojournal
 fi

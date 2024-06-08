@@ -26,5 +26,8 @@ go.work
 #Environment
 .env
 
+#Configs
+config/
+
 #Files
 attachments/

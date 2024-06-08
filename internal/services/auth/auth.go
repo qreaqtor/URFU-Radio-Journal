@@ -3,6 +3,7 @@ package authsrv
 import (
 	"errors"
 	"time"
+	"urfu-radio-journal/internal/config"
 	"urfu-radio-journal/internal/models"
 
 	"github.com/golang-jwt/jwt"
@@ -21,14 +22,14 @@ type AuthService struct {
 	secret        []byte
 }
 
-func NewAuthService(password, username, secret string, tokenLifetime int) *AuthService {
+func NewAuthService(conf config.AuthConfig) *AuthService {
 	return &AuthService{
 		admin: models.Admin{
-			Password: password,
-			Username: username,
+			Password: conf.Password,
+			Username: conf.Login,
 		},
-		tokenLifetime: time.Duration(tokenLifetime),
-		secret:        []byte(secret),
+		tokenLifetime: time.Duration(conf.TokenLifetime),
+		secret:        []byte(conf.Secret),
 	}
 }
 

@@ -3,14 +3,15 @@ package miniost
 import (
 	"context"
 	"fmt"
+	"urfu-radio-journal/internal/config"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-func GetConnect(user, password, url string, ssl bool) (*minio.Client, error) {
-	client, err := minio.New(url, &minio.Options{
-		Creds:  credentials.NewStaticV4(user, password, ""),
+func GetConnect(conf config.MinioConfig, ssl bool) (*minio.Client, error) {
+	client, err := minio.New(conf.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(conf.User, conf.Password, ""),
 		Secure: ssl,
 	})
 	if err != nil {

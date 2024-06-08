@@ -7,6 +7,10 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
+const (
+	filenameKey = "Filename"
+)
+
 type FileStorage struct {
 	client *minio.Client
 	bucket string
@@ -26,7 +30,12 @@ func (f *FileStorage) UploadFile(ctx context.Context, file *models.FileUnit, id 
 		id,
 		file.Payload,
 		file.Size,
-		minio.PutObjectOptions{ContentType: file.ContentType},
+		minio.PutObjectOptions{
+			ContentType: file.ContentType,
+			UserMetadata: map[string]string{
+				filenameKey: file.Filename,
+			},
+		},
 	)
 	if err != nil {
 		return err
@@ -67,6 +76,7 @@ func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.File
 		Payload:     obj,
 		Size:        stat.Size,
 		ContentType: stat.ContentType,
+		Filename:    stat.UserMetadata[filenameKey],
 	}
 
 	return file, nil

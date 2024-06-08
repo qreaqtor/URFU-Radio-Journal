@@ -38,6 +38,7 @@ func (fp *FilesHandler) UploadFile(ctx *gin.Context) {
 		Payload:     file,
 		ContentType: header.Header.Get("Content-Type"),
 		Size:        header.Size,
+		Filename:    header.Filename,
 	}
 
 	id, err := fp.files.UploadFile(ctx.Request.Context(), fileUnit)
@@ -62,14 +63,14 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 	}
 	defer fileUnit.Payload.Close()
 
+	ctx.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileUnit.Filename))
+	ctx.Header("Content-Type", fileUnit.ContentType)
+
 	_, err = io.Copy(ctx.Writer, fileUnit.Payload)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-
-	ctx.Header("Content-Length", fmt.Sprint(fileUnit.Size))
-	ctx.Header("Content-Type", fileUnit.ContentType)
 }
 
 func (fp *FilesHandler) DeleteFile(ctx *gin.Context) {
