@@ -7,19 +7,23 @@ const (
 )
 
 type Monitoring struct {
-	downloads prometheus.CounterVec
+	downloads *prometheus.CounterVec
 }
 
 func NewMonitoring() *Monitoring {
+	downloads := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: downloadsName,
+		}, []string{"filename"},
+	)
+
+	prometheus.MustRegister(downloads)
+
 	return &Monitoring{
-		downloads: *prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: downloadsName,
-			}, []string{"filename"},
-		),
+		downloads: downloads,
 	}
 }
 
-func (m *Monitoring) Update(filename string) {
+func (m *Monitoring) UpdateDownloads(filename string) {
 	m.downloads.WithLabelValues(filename).Inc()
 }

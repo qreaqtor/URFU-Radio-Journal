@@ -16,6 +16,7 @@ import (
 	filehand "urfu-radio-journal/internal/handlers/files"
 	"urfu-radio-journal/internal/handlers/middleware"
 	redactionhand "urfu-radio-journal/internal/handlers/redaction"
+	"urfu-radio-journal/internal/monitoring"
 	articlesrv "urfu-radio-journal/internal/services/article"
 	authsrv "urfu-radio-journal/internal/services/auth"
 	commentsrv "urfu-radio-journal/internal/services/comments"
@@ -38,6 +39,7 @@ import (
 	"github.com/gin-contrib/cors"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -95,6 +97,8 @@ func main() {
 	config.AllowCredentials = true
 	config.AddAllowHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition")
 
+	monitoring := monitoring.NewMonitoring()
+
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
 	commentStorage := commentst.NewCommentStorage(dbPostgres, commentsTable)
@@ -129,10 +133,12 @@ func main() {
 	councilHandler := councilhand.NewCouncilHandler(councilService)
 	editionHandler := editionhand.NewEditionHandler(editionService)
 	redactionHandler := redactionhand.NewRedactionHandler(redactionService)
-	fileHandler := filehand.NewFilesHandler(fileService)
+	fileHandler := filehand.NewFilesHandler(fileService, monitoring)
 
 	engine := gin.Default()
 	engine.Use(cors.New(config))
+
+	engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	router := engine.Group(fmt.Sprintf("/api/v%d", conf.ApiVersion))
 

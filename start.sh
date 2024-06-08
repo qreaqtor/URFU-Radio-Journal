@@ -9,7 +9,7 @@ then
 fi
 
 if [[ $ENV == 'local' ]]; then
-    docker-compose up -d minio postgres
+    docker-compose up -d minio postgres prometheus grafana
 else
     docker-compose up -d
 fi
