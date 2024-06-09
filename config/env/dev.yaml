@@ -7,16 +7,19 @@ minio:
   password: miniopass
   buckets:
     - name: videos
-      content_types: video/mp4
+      content_types:
+        - video/mp4
     - name: documents
-      content_types: application/pdf
+      content_types:
+        - application/pdf
     - name: images
-      content_types: image/jpeg
+      content_types:
+        - image/jpeg
 
 postgres:
   password: testpass
   user: testuser
-  name: radio-journal
+  database: radio-journal
 
 auth:
   admin_password: admin
@@ -25,4 +28,5 @@ auth:
   token_lifetime: 24
 
 monitoring:
-  content_types: application/pdf
+  content_types:
+    - application/pdf

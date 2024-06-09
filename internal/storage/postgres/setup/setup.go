@@ -21,7 +21,7 @@ func GetConnect(conf config.PostgresConfig, ssl bool) (*sql.DB, error) {
 		conf.Port,
 		conf.User,
 		conf.Password,
-		conf.DbName,
+		conf.Database,
 		sslMode,
 	)
 

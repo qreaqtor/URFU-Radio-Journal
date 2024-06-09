@@ -12,8 +12,8 @@ type ServerConfig struct {
 	MaxFileSize int64    `yaml:"max_file_size" env-default:"10485760"` // in bytes, 10 Mbyte
 	Ssl         bool     `yaml:"ssl" env-default:"false"`
 	Origins     []string `yaml:"allow_origins" env-default:"*"`
-	Methods     []string `yaml:"allow_methods" env-default:"GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"`
-	Headers     []string `yaml:"allow_headers" env-default:"Content-Type,Content-Length"`
+	Methods     []string `yaml:"allow_methods" env-default:"*"`
+	Headers     []string `yaml:"allow_headers" env-default:"*"`
 }
 
 type MinioConfig struct {
@@ -31,7 +31,7 @@ type BucketConfig struct {
 type PostgresConfig struct {
 	User         string `yaml:"user" env-required:"true"`
 	Password     string `yaml:"password" env-required:"true"`
-	DbName       string `yaml:"name" env-required:"true"`
+	Database     string `yaml:"database" env-required:"true"`
 	Host         string `yaml:"host" env-default:"localhost"`
 	Port         int    `yaml:"port" env-default:"5432"`
 	ConnAttempts int    `yaml:"connection_attempts" env-default:"5"`

@@ -57,6 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("%+v\n", conf)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -100,7 +101,7 @@ func main() {
 	fileInfoStorage := fileinfost.NewFileInfoStorage(dbPostgres, fileInfoTable)
 	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
-	buckets := make([]bucketsrv.FileRepo, len(conf.Buckets))
+	buckets := make([]bucketsrv.FileRepo, 0, len(conf.Buckets))
 	for _, bucketConf := range conf.Buckets {
 		buckets = append(buckets, filest.NewFileStorage(minioClient, bucketConf.Name, bucketConf.ContentTypes...))
 	}

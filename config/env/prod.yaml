@@ -1,0 +1,51 @@
+env: prod
+ssl: false
+port: 8080
+api_version: 1
+max_file_size: 104857600
+allow_origins:
+  - '*'
+allow_methods: 
+  - GET
+  - POST
+  - PUT
+  - PATCH
+  - DELETE
+allow_headers:
+  - Authorization
+  - Content-Type
+  - Content-Length
+  - Content-Disposition
+
+minio:
+  user: miniouser
+  password: miniopass
+  endpoint: minio:9000
+  buckets:
+    - name: videos
+      content_types:
+        - video/mp4
+    - name: documents
+      content_types:
+        - application/pdf
+    - name: images
+      content_types:
+        - image/jpeg
+
+postgres:
+  password: testpass
+  user: testuser
+  database: radio-journal
+  host: postgres
+  port: 5432
+  connection_attempts: 10
+
+auth:
+  admin_password: admin
+  admin_login: admin
+  secret: lgUryb6uUY3gVSx6bPBswgKHWfFKtLK7Re3u3RRv7WA44h7WTTYr3xmrOU2jBlG5YAGwdZGcc8HOtDEJvJiEGUiYg6I8FFSIhfbh
+  token_lifetime: 24
+
+monitoring:
+  content_types:
+    - application/pdf
