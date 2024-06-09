@@ -24,10 +24,10 @@ go.work
 .vscode
 
 #Environment
-.env
+*.env
 
 #Configs
-*.env
+prod.yml
 
 #Files
 attachments/

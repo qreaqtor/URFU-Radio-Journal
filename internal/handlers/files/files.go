@@ -16,19 +16,19 @@ type service interface {
 	DeleteFile(context.Context, string) error
 }
 
-type monitoring interface {
-	UpdateDownloads(string)
+type updater interface {
+	UpdateDownloads(string, string)
 }
 
 type FilesHandler struct {
-	files service
-	downloads monitoring
+	files      service
+	monitoring updater
 }
 
-func NewFilesHandler(files service, downloads monitoring) *FilesHandler {
+func NewFilesHandler(files service, monitoring updater) *FilesHandler {
 	return &FilesHandler{
-		files: files,
-		downloads: downloads,
+		files:      files,
+		monitoring: monitoring,
 	}
 }
 
@@ -69,7 +69,7 @@ func (fp *FilesHandler) DownloadFile(ctx *gin.Context) {
 	}
 	defer fileUnit.Payload.Close()
 
-	fp.downloads.UpdateDownloads(fileUnit.Filename)
+	fp.monitoring.UpdateDownloads(fileUnit.Filename, fileUnit.ContentType)
 
 	ctx.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileUnit.Filename))
 	ctx.Header("Content-Type", fileUnit.ContentType)

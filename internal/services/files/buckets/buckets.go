@@ -1,4 +1,4 @@
-package buckets
+package bucketsrv
 
 import (
 	"context"
@@ -16,21 +16,20 @@ type FileRepo interface {
 	DeleteFile(context.Context, string) error
 	DownloadFile(context.Context, string) (*models.FileUnit, error)
 	GetBucketName() string
+	GetContentTypes() []string
 }
-
-type AllowedContentType map[FileRepo][]string
 
 type Buckets struct {
 	bucketsByContentType, bucketsbyName map[string]FileRepo
 }
 
-func NewBuckets(types AllowedContentType) *Buckets {
+func NewBuckets(buckets []FileRepo) *Buckets {
 	bucketsByContentType := make(map[string]FileRepo)
 	bucketsbyName := make(map[string]FileRepo)
 
-	for bucket, contentTypes := range types {
+	for _, bucket := range buckets {
 		bucketsbyName[bucket.GetBucketName()] = bucket
-		for _, contentType := range contentTypes {
+		for _, contentType := range bucket.GetContentTypes() {
 			bucketsByContentType[contentType] = bucket
 		}
 	}

@@ -30,7 +30,7 @@ services:
   radiojournal:
     build: ./
     environment:
-      CONFIG_PATH: ./prod.env
+      CONFIG_PATH: ${CONFIG_PATH}
     ports:
       - '8080:8080'
     depends_on:

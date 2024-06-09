@@ -21,15 +21,15 @@ func GetConnect(conf config.MinioConfig, ssl bool) (*minio.Client, error) {
 	return client, nil
 }
 
-func InitBuckets(ctx context.Context, client *minio.Client, buckets ...string) error {
+func InitBuckets(ctx context.Context, client *minio.Client, buckets ...config.BucketConfig) error {
 	opts := minio.MakeBucketOptions{}
 	for _, bucket := range buckets {
-		exists, err := client.BucketExists(ctx, bucket)
+		exists, err := client.BucketExists(ctx, bucket.Name)
 		if err != nil {
-			return fmt.Errorf("cant check bucket exists: %v", err)
+			return fmt.Errorf("cant check is bucket exists: %v", err)
 		}
 		if !exists {
-			err = client.MakeBucket(ctx, bucket, opts)
+			err = client.MakeBucket(ctx, bucket.Name, opts)
 			if err != nil {
 				return fmt.Errorf("cant make bucket: %v", err)
 			}

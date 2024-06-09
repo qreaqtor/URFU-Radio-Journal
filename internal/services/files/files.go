@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/internal/services/files/buckets"
+	bucketsrv "urfu-radio-journal/internal/services/files/buckets"
 )
 
 type fileInfoRepo interface {
@@ -15,14 +15,13 @@ type fileInfoRepo interface {
 
 type FileService struct {
 	filesInfo fileInfoRepo
-	buckets   *buckets.Buckets
+	buckets   *bucketsrv.Buckets
 }
 
-func NewFileService(types buckets.AllowedContentType, files fileInfoRepo) *FileService {
-	buckets := buckets.NewBuckets(types)
+func NewFileService(files fileInfoRepo, buckets ...bucketsrv.FileRepo) *FileService {
 	return &FileService{
 		filesInfo: files,
-		buckets:   buckets,
+		buckets:   bucketsrv.NewBuckets(buckets),
 	}
 }
 

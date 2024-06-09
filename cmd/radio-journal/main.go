@@ -23,7 +23,7 @@ import (
 	councilsrv "urfu-radio-journal/internal/services/council"
 	editionsrv "urfu-radio-journal/internal/services/edition"
 	filesrv "urfu-radio-journal/internal/services/files"
-	"urfu-radio-journal/internal/services/files/buckets"
+	bucketsrv "urfu-radio-journal/internal/services/files/buckets"
 	redactionsrv "urfu-radio-journal/internal/services/redaction"
 	filest "urfu-radio-journal/internal/storage/minio/files"
 	miniost "urfu-radio-journal/internal/storage/minio/setup"
@@ -43,10 +43,6 @@ import (
 )
 
 const (
-	videosBucket    = "videos"
-	imagesBucket    = "images"
-	documentsBucket = "documents"
-
 	fileInfoTable  = "fileinfo"
 	articlesTable  = "articles"
 	commentsTable  = "comments"
@@ -84,22 +80,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = miniost.InitBuckets(ctx, minioClient,
-		videosBucket,
-		imagesBucket,
-		documentsBucket,
-	)
+	err = miniost.InitBuckets(ctx, minioClient, conf.Buckets...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	corsConf := cors.DefaultConfig()
 	corsConf.AllowOrigins = conf.Origins
-	corsConf.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	corsConf.AllowMethods = conf.Methods
 	corsConf.AllowCredentials = true
-	corsConf.AddAllowHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition")
-
-	monitoring := monitoring.NewMonitoring()
+	corsConf.AddAllowHeaders(conf.Methods...)
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
@@ -108,15 +98,11 @@ func main() {
 	editionStorage := editionst.NewEditionStorage(dbPostgres, editionsTable)
 	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, redactionTable)
 	fileInfoStorage := fileinfost.NewFileInfoStorage(dbPostgres, fileInfoTable)
-	videoStorage := filest.NewFileStorage(minioClient, videosBucket)
-	imageStorage := filest.NewFileStorage(minioClient, imagesBucket)
-	documentStorage := filest.NewFileStorage(minioClient, documentsBucket)
 	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
-	types := buckets.AllowedContentType{
-		videoStorage:    {"video/mp4"},
-		imageStorage:    {"image/jpeg"},
-		documentStorage: {"application/pdf"},
+	buckets := make([]bucketsrv.FileRepo, len(conf.Buckets))
+	for _, bucketConf := range conf.Buckets {
+		buckets = append(buckets, filest.NewFileStorage(minioClient, bucketConf.Name, bucketConf.ContentTypes...))
 	}
 
 	// тут всех сервисов
@@ -126,7 +112,9 @@ func main() {
 	councilService := councilsrv.NewCouncilService(councilStorage)
 	editionService := editionsrv.NewEditionService(editionStorage)
 	redactionService := redactionsrv.NewRedactionService(redactionStorage)
-	fileService := filesrv.NewFileService(types, fileInfoStorage)
+	fileService := filesrv.NewFileService(fileInfoStorage, buckets...)
+
+	monitoring := monitoring.NewMonitoring(conf.Monitoring.ContentTypes...)
 
 	// тут хендлеров
 	articleHandler := articlehand.NewArticleHandler(articleService)
@@ -209,7 +197,7 @@ const (
 	dev  = "dev"
 )
 
-// This func not set handler for server
+// This func is not set handler for server
 func getServerWithConf(ctx context.Context, cancel context.CancelFunc, conf *config.ServerConfig) (*http.Server, error) {
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", conf.Port),

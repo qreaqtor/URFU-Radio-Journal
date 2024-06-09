@@ -1,36 +1,49 @@
 package config
 
 type ServerConfig struct {
-	PostgresConfig
-	MinioConfig
-	AuthConfig
+	PostgresConfig `yaml:"postgres" env-required:"true"`
+	MinioConfig    `yaml:"minio" env-required:"true"`
+	AuthConfig     `yaml:"auth" env-required:"true"`
+	Monitoring     `yaml:"monitoring" env-required:"true"`
 
-	Port        int      `env:"PORT" env-required:"true"`
-	ApiVersion  int      `env:"API_VERSION" env-required:"true"`
-	MaxFileSize int64    `env:"MAX_FILE_SIZE" env-required:"true"` // in bytes
-	Env         string   `env:"ENV" env-required:"true"`
-	Ssl         bool     `env:"SSL" env-default:"false"`
-	Origins     []string `env:"ALLOW_ORIGINS" env-default:"*"`
+	Env         string   `yaml:"env" env-required:"true"`
+	Port        int      `yaml:"port" env-required:"true"`
+	ApiVersion  int      `yaml:"api_version" env-required:"true"`
+	MaxFileSize int64    `yaml:"max_file_size" env-default:"10485760"` // in bytes, 10 Mbyte
+	Ssl         bool     `yaml:"ssl" env-default:"false"`
+	Origins     []string `yaml:"allow_origins" env-default:"*"`
+	Methods     []string `yaml:"allow_methods" env-default:"GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"`
+	Headers     []string `yaml:"allow_headers" env-default:"Content-Type,Content-Length"`
 }
 
 type MinioConfig struct {
-	User     string `env:"MINIO_USER" env-required:"true"`
-	Password string `env:"MINIO_PASSWORD" env-required:"true"`
-	Endpoint string `env:"MINIO_ENDPOINT" env-default:"localhost:9000"`
+	User     string         `yaml:"user" env-required:"true"`
+	Password string         `yaml:"password" env-required:"true"`
+	Endpoint string         `yaml:"endpoint" env-default:"localhost:9000"`
+	Buckets  []BucketConfig `yaml:"buckets" env-required:"true"`
+}
+
+type BucketConfig struct {
+	Name         string   `yaml:"name" env-required:"true"`
+	ContentTypes []string `yaml:"content_types" env-required:"true"`
 }
 
 type PostgresConfig struct {
-	User         string `env:"DB_USER" env-required:"true"`
-	Password     string `env:"DB_PASSWORD" env-required:"true"`
-	DbName       string `env:"DB_NAME" env-required:"true"`
-	Host         string `env:"DB_HOST" env-default:"localhost"`
-	Port         int    `env:"DB_PORT" env-default:"5432"`
-	ConnAttempts int    `env:"CONNECTION_ATTEMPTS" env-default:"5"`
+	User         string `yaml:"user" env-required:"true"`
+	Password     string `yaml:"password" env-required:"true"`
+	DbName       string `yaml:"name" env-required:"true"`
+	Host         string `yaml:"host" env-default:"localhost"`
+	Port         int    `yaml:"port" env-default:"5432"`
+	ConnAttempts int    `yaml:"connection_attempts" env-default:"5"`
 }
 
 type AuthConfig struct {
-	Password      string `env:"ADMIN_PASSWORD" env-required:"true"`
-	Login         string `env:"ADMIN_LOGIN" env-required:"true"`
-	Secret        string `env:"SECRET" env-required:"true"`
-	TokenLifetime int    `env:"TOKEN_LIFETIME" env-required:"true"`
+	Password      string `yaml:"admin_password" env-required:"true"`
+	Login         string `yaml:"admin_login" env-required:"true"`
+	Secret        string `yaml:"secret" env-required:"true"`
+	TokenLifetime int    `yaml:"token_lifetime" env-required:"true"`
+}
+
+type Monitoring struct {
+	ContentTypes []string `yaml:"content_types" env-required:"true"`
 }

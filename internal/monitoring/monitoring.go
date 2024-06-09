@@ -7,10 +7,12 @@ const (
 )
 
 type Monitoring struct {
-	downloads *prometheus.CounterVec
+	downloads       *prometheus.CounterVec
+	monitoringTypes []string
 }
 
-func NewMonitoring() *Monitoring {
+// monitoringTypes is a slice of Content-Type headers, which would be monitoring for download
+func NewMonitoring(monitoringTypes ...string) *Monitoring {
 	downloads := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: downloadsName,
@@ -20,10 +22,16 @@ func NewMonitoring() *Monitoring {
 	prometheus.MustRegister(downloads)
 
 	return &Monitoring{
-		downloads: downloads,
+		downloads:       downloads,
+		monitoringTypes: monitoringTypes,
 	}
 }
 
-func (m *Monitoring) UpdateDownloads(filename string) {
-	m.downloads.WithLabelValues(filename).Inc()
+func (m *Monitoring) UpdateDownloads(filename, contentType string) {
+	for _, content := range m.monitoringTypes {
+		if content == contentType {
+			m.downloads.WithLabelValues(filename).Inc()
+			return
+		}
+	}
 }

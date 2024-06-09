@@ -12,14 +12,16 @@ const (
 )
 
 type FileStorage struct {
-	client *minio.Client
-	bucket string
+	client       *minio.Client
+	bucket       string
+	contentTypes []string
 }
 
-func NewFileStorage(client *minio.Client, bucketName string) *FileStorage {
+func NewFileStorage(client *minio.Client, bucketName string, content ...string) *FileStorage {
 	return &FileStorage{
-		client: client,
-		bucket: bucketName,
+		client:       client,
+		bucket:       bucketName,
+		contentTypes: content,
 	}
 }
 
@@ -84,4 +86,8 @@ func (f *FileStorage) DownloadFile(ctx context.Context, id string) (*models.File
 
 func (f *FileStorage) GetBucketName() string {
 	return f.bucket
+}
+
+func (f *FileStorage) GetContentTypes() []string {
+	return f.contentTypes
 }
