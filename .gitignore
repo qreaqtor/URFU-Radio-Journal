@@ -24,7 +24,9 @@ go.work
 .vscode
 
 #Environment
-.env
+*.env
+config/env/*.yaml
+config/env/*.yml
 
 #Files
 attachments/

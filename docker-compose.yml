@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:alpine3.20
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    ports:
+      - '5432:5432'
+    volumes:
+      - './internal/storage/postgres/_sql/:/docker-entrypoint-initdb.d/'
+
+  minio:
+    image: minio/minio:latest
+    command: server --console-address ":9001" /data/
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes:
+      - './attachments/minio-storage:/data'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  radiojournal:
+    build: ./
+    environment:
+      CONFIG_PATH: ${CONFIG_PATH}
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+      - minio
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./config/prometheus:/etc/prometheus"
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    links:
+      - prometheus:prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - "./config/grafana/dashboards:/etc/grafana/provisioning/dashboards"
+      - "./config/grafana/datasources:/etc/grafana/provisioning/datasources"
