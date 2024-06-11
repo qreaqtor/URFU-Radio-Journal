@@ -25,9 +25,8 @@ go.work
 
 #Environment
 *.env
-
-#Configs
-prod.yml
+config/env/*.yaml
+config/env/*.yml
 
 #Files
 attachments/
