@@ -51,3 +51,6 @@ services:
       - prometheus:prometheus
     ports:
       - 3000:3000
+    volumes:
+      - "./config/grafana/dashboards:/etc/grafana/provisioning/dashboards"
+      - "./config/grafana/datasources:/etc/grafana/provisioning/datasources"
