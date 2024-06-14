@@ -69,11 +69,6 @@ func (c *CommentsHandler) Update(ctx *gin.Context) {
 
 func (c *CommentsHandler) Delete(ctx *gin.Context) {
 	commentId := ctx.Param("id")
-	// commentId, err := primitive.ObjectIDFromHex(commentIdStr)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-	// 	return
-	// }
 	if err := c.comments.Delete(commentId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -93,16 +88,3 @@ func (c *CommentsHandler) Approve(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
-
-// func (c *CommentsHandler) RegisterRoutes(publicRg, adminRg *gin.RouterGroup) {
-// 	publicRg.GET("/get/all", c.getAll)
-// 	publicRg.POST("/create", c.create)
-
-// 	adminRg.PATCH("/update", c.update)
-// 	adminRg.PATCH("/approve", c.approve)
-// 	adminRg.DELETE("/delete/:id", c.delete)
-// }
-
-// func (c *CommentsHandler) GetDeleteHandler() func(filter primitive.M) error {
-// 	return c.comments.DeleteManyHandler
-// }
