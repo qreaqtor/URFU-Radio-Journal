@@ -299,3 +299,21 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 
 	return nil
 }
+
+func (as *ArticleStorage) GetCount() (int, error) {
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM %s",
+		as.table,
+	)
+
+	row := as.db.QueryRow(query)
+
+	count := 0
+	err := row.Scan(&count)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

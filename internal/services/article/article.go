@@ -16,6 +16,7 @@ type articleStorage interface {
 	FindOne(string) (*models.ArticleRead, error)
 	UpdateOne(*models.ArticleUpdate) error
 	Delete(string) error
+	GetCount() (int, error)
 }
 
 type authorStorage interface {
@@ -50,23 +51,28 @@ func (as *ArticleService) Create(article *models.ArticleCreate) (string, error) 
 	return id, err
 }
 
-func (as *ArticleService) GetAll(args *models.ArticleQuery) ([]*models.ArticleRead, error) {
+func (as *ArticleService) GetAll(args *models.ArticleQuery) ([]*models.ArticleRead, int, error) {
 	articles, err := as.articleRepo.Find(args)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for _, article := range articles {
 		id := strconv.Itoa(article.Id)
 		authors, err := as.authorRepo.Find(id)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		article.Authors = authors
 	}
 
-	return articles, err
+	count, err := as.articleRepo.GetCount()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return articles, count, err
 }
 
 func (as *ArticleService) Get(articleIdStr string) (*models.ArticleRead, error) {

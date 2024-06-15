@@ -157,3 +157,21 @@ func (cs *CommentsStorage) Approve(commentApprove *models.CommentApprove, conten
 
 	return nil
 }
+
+func (cs *CommentsStorage) GetCount(approved bool) (int, error) {
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM %s WHERE is_approved = $1",
+		cs.table,
+	)
+
+	row := cs.db.QueryRow(query, approved)
+
+	count := 0
+	err := row.Scan(&count)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

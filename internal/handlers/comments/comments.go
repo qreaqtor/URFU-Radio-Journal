@@ -9,7 +9,7 @@ import (
 
 type service interface {
 	Create(*models.CommentCreate) error
-	GetAll(*models.CommentQuery) ([]*models.CommentRead, error)
+	GetAll(*models.CommentQuery) ([]*models.CommentRead, int, error)
 	Update(*models.CommentUpdate) error
 	Delete(string) error
 	Approve(*models.CommentApprove) error
@@ -46,12 +46,15 @@ func (c *CommentsHandler) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	comments, err := c.comments.GetAll(args)
+	comments, count, err := c.comments.GetAll(args)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": comments})
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":      comments,
+		"all_count": count,
+	})
 }
 
 func (c *CommentsHandler) Update(ctx *gin.Context) {

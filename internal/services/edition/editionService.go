@@ -11,6 +11,7 @@ type storage interface {
 	FindOne(string) (*models.EditionRead, error)
 	UpdateOne(*models.EditionUpdate) error
 	Delete(string) error
+	GetCount() (int, error)
 }
 
 type EditionService struct {
@@ -27,8 +28,18 @@ func (es *EditionService) Create(edition *models.EditionCreate) (id string, err 
 	return es.repo.InsertOne(edition)
 }
 
-func (es *EditionService) GetAll(args *models.BatchArgs) (editions []*models.EditionRead, err error) {
-	return es.repo.GetAll(args)
+func (es *EditionService) GetAll(args *models.BatchArgs) ([]*models.EditionRead, int, error) {
+	result, err := es.repo.GetAll(args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	count, err := es.repo.GetCount()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return result, count, nil
 }
 
 func (es *EditionService) Get(id string) (*models.EditionRead, error) {

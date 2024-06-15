@@ -9,7 +9,7 @@ import (
 
 type service interface {
 	Create(*models.ArticleCreate) (string, error)
-	GetAll(*models.ArticleQuery) ([]*models.ArticleRead, error)
+	GetAll(*models.ArticleQuery) ([]*models.ArticleRead, int, error)
 	Get(string) (*models.ArticleRead, error)
 	Update(*models.ArticleUpdate) error
 	Delete(string) error
@@ -50,12 +50,15 @@ func (a *ArticleHandler) GetAllArticles(ctx *gin.Context) {
 		return
 	}
 
-	result, err := a.articles.GetAll(args)
+	result, count, err := a.articles.GetAll(args)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": result})
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":      result,
+		"all_count": count,
+	})
 }
 
 func (a *ArticleHandler) GetArticleById(ctx *gin.Context) {

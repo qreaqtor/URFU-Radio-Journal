@@ -8,8 +8,8 @@ import (
 )
 
 type EditionStorage struct {
-	db    *sql.DB
 	table string
+	db    *sql.DB
 }
 
 func NewEditionStorage(db *sql.DB, table string) *EditionStorage {
@@ -124,4 +124,22 @@ func (es *EditionStorage) Delete(editionIdStr string) error {
 		return err
 	}
 	return nil
+}
+
+func (es *EditionStorage) GetCount() (int, error) {
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM %s",
+		es.table,
+	)
+
+	row := es.db.QueryRow(query)
+
+	count := 0
+	err := row.Scan(&count)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

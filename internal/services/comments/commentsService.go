@@ -12,6 +12,7 @@ type storage interface {
 	UpdateOne(*models.CommentUpdate) error
 	Delete(string) error
 	Approve(*models.CommentApprove, string) error
+	GetCount(bool) (int, error)
 }
 
 type CommentsService struct {
@@ -57,12 +58,18 @@ func (cs *CommentsService) determineLanguage(str string) (unicodeRange *unicode.
 	return unicodeRange, err
 }
 
-func (cs *CommentsService) GetAll(args *models.CommentQuery) ([]*models.CommentRead, error) {
+func (cs *CommentsService) GetAll(args *models.CommentQuery) ([]*models.CommentRead, int, error) {
 	result, err := cs.repo.GetAll(args)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return result, nil
+
+	count, err := cs.repo.GetCount(args.OnlyApproved)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return result, count, nil
 }
 
 func (cs *CommentsService) Update(comment *models.CommentUpdate) error {
