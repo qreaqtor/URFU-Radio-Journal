@@ -89,7 +89,7 @@ func main() {
 	corsConf.AllowOrigins = conf.Origins
 	corsConf.AllowMethods = conf.Methods
 	corsConf.AllowCredentials = true
-	corsConf.AddAllowHeaders(conf.Methods...)
+	corsConf.AddAllowHeaders(conf.Headers...)
 
 	// тут инициализация всех стореджей
 	articleStorage := articlest.NewArticleStorage(dbPostgres, articlesTable)
@@ -147,9 +147,10 @@ func main() {
 	authRouter.POST("/login", authHandler.Login)
 
 	commentRouter := router.Group("/comments")
-	commentRouter.GET("/get/all", commentHandler.GetAll)
+	commentRouter.POST("/create", commentHandler.Create)
+	
+	commentRouter.GET("/get/all", middleware.CheckApproved, authMiddleware, commentHandler.GetAll)
 
-	commentRouter.POST("/create", authMiddleware, commentHandler.Create)
 	commentRouter.PATCH("/update", authMiddleware, commentHandler.Update)
 	commentRouter.PATCH("/approve", authMiddleware, commentHandler.Approve)
 	commentRouter.DELETE("/delete/:id", authMiddleware, commentHandler.Delete)

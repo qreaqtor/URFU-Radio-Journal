@@ -2,7 +2,6 @@ package commentshand
 
 import (
 	"net/http"
-	"strconv"
 	"urfu-radio-journal/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +9,7 @@ import (
 
 type service interface {
 	Create(*models.CommentCreate) error
-	GetAll(bool, string) ([]*models.CommentRead, error)
+	GetAll(*models.CommentQuery) ([]*models.CommentRead, error)
 	Update(*models.CommentUpdate) error
 	Delete(string) error
 	Approve(*models.CommentApprove) error
@@ -40,13 +39,14 @@ func (c *CommentsHandler) Create(ctx *gin.Context) {
 }
 
 func (c *CommentsHandler) GetAll(ctx *gin.Context) {
-	onlyApproved, err := strconv.ParseBool(ctx.Query("onlyApproved"))
+	args := &models.CommentQuery{}
+	err := ctx.ShouldBindQuery(args)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	articleId := ctx.Query("articleId")
-	comments, err := c.comments.GetAll(onlyApproved, articleId)
+
+	comments, err := c.comments.GetAll(args)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

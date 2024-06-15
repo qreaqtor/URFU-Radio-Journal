@@ -31,3 +31,9 @@ type CommentApprove struct {
 	Id          int    `json:"id" binding:"required"`
 	ContentPart string `json:"content" binding:"required"`
 }
+
+type CommentQuery struct {
+	OnlyApproved bool `form:"onlyApproved"`
+	ArticleID    int  `form:"articleId" binding:"required"`
+	BatchArgs
+}

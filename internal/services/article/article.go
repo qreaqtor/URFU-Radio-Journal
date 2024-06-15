@@ -12,7 +12,7 @@ var (
 
 type articleStorage interface {
 	InsertOne(*models.ArticleCreate) (string, error)
-	Find(string) ([]*models.ArticleRead, error)
+	Find(*models.ArticleQuery) ([]*models.ArticleRead, error)
 	FindOne(string) (*models.ArticleRead, error)
 	UpdateOne(*models.ArticleUpdate) error
 	Delete(string) error
@@ -50,12 +50,8 @@ func (as *ArticleService) Create(article *models.ArticleCreate) (string, error) 
 	return id, err
 }
 
-func (as *ArticleService) GetAll(editionIdStr string) ([]*models.ArticleRead, error) {
-	if editionIdStr == "" {
-		return nil, errBadId
-	}
-
-	articles, err := as.articleRepo.Find(editionIdStr)
+func (as *ArticleService) GetAll(args *models.ArticleQuery) ([]*models.ArticleRead, error) {
+	articles, err := as.articleRepo.Find(args)
 	if err != nil {
 		return nil, err
 	}

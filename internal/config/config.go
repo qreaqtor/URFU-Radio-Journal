@@ -13,7 +13,7 @@ type ServerConfig struct {
 	Ssl         bool     `yaml:"ssl" env-default:"false"`
 	Origins     []string `yaml:"allow_origins" env-default:"*"`
 	Methods     []string `yaml:"allow_methods" env-default:"*"`
-	Headers     []string `yaml:"allow_headers" env-default:"*"`
+	Headers     []string `yaml:"allow_headers"`
 }
 
 type MinioConfig struct {

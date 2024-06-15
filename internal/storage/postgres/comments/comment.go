@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"urfu-radio-journal/internal/models"
+	"urfu-radio-journal/internal/storage/postgres/utils"
 )
 
 type CommentsStorage struct {
@@ -58,7 +59,7 @@ func (cs *CommentsStorage) InsertOne(comment *models.CommentCreate) (string, err
 	return id, nil
 }
 
-func (cs *CommentsStorage) GetAll(onlyApproved bool, articleIdStr string) ([]*models.CommentRead, error) {
+func (cs *CommentsStorage) GetAll(args *models.CommentQuery) ([]*models.CommentRead, error) {
 	var comments []*models.CommentRead
 	query := fmt.Sprintf(
 		"SELECT comment_id, %s FROM %s WHERE article = $1 AND is_approved = $2",
@@ -66,10 +67,12 @@ func (cs *CommentsStorage) GetAll(onlyApproved bool, articleIdStr string) ([]*mo
 		cs.table,
 	)
 
+	queryBatch := utils.AddBatchToQuery(query, &args.BatchArgs)
+
 	rows, err := cs.db.Query(
-		query,
-		articleIdStr,
-		onlyApproved,
+		queryBatch,
+		args.ArticleID,
+		args.OnlyApproved,
 	)
 
 	if err != nil {

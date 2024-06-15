@@ -8,7 +8,7 @@ import (
 
 type storage interface {
 	InsertOne(*models.CommentCreate) (string, error)
-	GetAll(bool, string) ([]*models.CommentRead, error)
+	GetAll(*models.CommentQuery) ([]*models.CommentRead, error)
 	UpdateOne(*models.CommentUpdate) error
 	Delete(string) error
 	Approve(*models.CommentApprove, string) error
@@ -57,11 +57,8 @@ func (cs *CommentsService) determineLanguage(str string) (unicodeRange *unicode.
 	return unicodeRange, err
 }
 
-func (cs *CommentsService) GetAll(onlyApproved bool, articleIdStr string) ([]*models.CommentRead, error) {
-	if articleIdStr == "" {
-		return nil, fmt.Errorf("articleId is empty")
-	}
-	result, err := cs.repo.GetAll(onlyApproved, articleIdStr)
+func (cs *CommentsService) GetAll(args *models.CommentQuery) ([]*models.CommentRead, error) {
+	result, err := cs.repo.GetAll(args)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +72,6 @@ func (cs *CommentsService) Update(comment *models.CommentUpdate) error {
 func (cs *CommentsService) Delete(id string) error {
 	return cs.repo.Delete(id)
 }
-
-// func (cs *CommentsService) DeleteManyHandler(filter primitive.M) error {
-// 	_, err := cs.repo.DeleteMany(cs.ctx, filter)
-// 	return err
-// }
 
 func (cs *CommentsService) Approve(commentApprove *models.CommentApprove) error {
 	unicodeRange, err := cs.determineLanguage(commentApprove.ContentPart)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"urfu-radio-journal/internal/models"
+	"urfu-radio-journal/internal/storage/postgres/utils"
 
 	"github.com/lib/pq"
 )
@@ -77,13 +78,18 @@ func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, erro
 	return strconv.Itoa(articleID), nil
 }
 
-func (as *ArticleStorage) Find(editionID string) ([]*models.ArticleRead, error) {
+func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead, error) {
 	query := fmt.Sprintf(
 		"SELECT article_id, %s FROM %s WHERE edition_id = $1",
 		getColumns(),
 		as.table,
 	)
-	rows, err := as.db.Query(query, editionID)
+
+	queryBatch := utils.AddBatchToQuery(query, &args.BatchArgs)
+
+	fmt.Println(query)
+
+	rows, err := as.db.Query(queryBatch, args.EditionID)
 	if err != nil {
 		return nil, err
 	}

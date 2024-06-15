@@ -49,3 +49,8 @@ type ArticleUpdate struct {
 	DateAcceptance time.Time `json:"dateAcceptance" bson:"dateAcceptance,omitempty" binding:"-"`
 	DOI            string    `json:"doi" bson:"doi,omitempty" binding:"-"`
 }
+
+type ArticleQuery struct {
+	EditionID int `form:"editionId" binding:"required"`
+	BatchArgs
+}

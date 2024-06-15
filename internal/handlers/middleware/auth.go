@@ -15,6 +15,13 @@ var (
 
 func Auth(validateToken func(string) error) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		skip := ctx.GetBool("skip")
+		if skip {
+			ctx.Next()
+			ctx.Abort()
+			return
+		}
+
 		token, err := extractToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("no token: %s", err.Error())})

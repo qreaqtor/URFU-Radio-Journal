@@ -9,7 +9,7 @@ import (
 
 type service interface {
 	Create(*models.EditionCreate) (string, error)
-	GetAll() ([]*models.EditionRead, error)
+	GetAll(*models.BatchArgs) ([]*models.EditionRead, error)
 	Get(string) (*models.EditionRead, error)
 	Update(*models.EditionUpdate) error
 	Delete(string) error
@@ -43,7 +43,14 @@ func (e *EditionHandler) CreateEdition(ctx *gin.Context) {
 }
 
 func (e *EditionHandler) GetAllEditions(ctx *gin.Context) {
-	res, err := e.editions.GetAll()
+	args := &models.BatchArgs{}
+	err := ctx.ShouldBindQuery(args)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	res, err := e.editions.GetAll(args)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

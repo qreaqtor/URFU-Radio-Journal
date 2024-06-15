@@ -7,7 +7,7 @@ import (
 
 type storage interface {
 	InsertOne(*models.EditionCreate) (string, error)
-	GetAll() ([]*models.EditionRead, error)
+	GetAll(*models.BatchArgs) ([]*models.EditionRead, error)
 	FindOne(string) (*models.EditionRead, error)
 	UpdateOne(*models.EditionUpdate) error
 	Delete(string) error
@@ -27,8 +27,8 @@ func (es *EditionService) Create(edition *models.EditionCreate) (id string, err 
 	return es.repo.InsertOne(edition)
 }
 
-func (es *EditionService) GetAll() (editions []*models.EditionRead, err error) {
-	return es.repo.GetAll()
+func (es *EditionService) GetAll(args *models.BatchArgs) (editions []*models.EditionRead, err error) {
+	return es.repo.GetAll(args)
 }
 
 func (es *EditionService) Get(id string) (*models.EditionRead, error) {

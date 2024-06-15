@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"urfu-radio-journal/internal/models"
+	"urfu-radio-journal/internal/storage/postgres/utils"
 )
 
 type EditionStorage struct {
@@ -43,12 +44,15 @@ func (es *EditionStorage) InsertOne(edition *models.EditionCreate) (string, erro
 	return id, nil
 }
 
-func (es *EditionStorage) GetAll() ([]*models.EditionRead, error) {
+func (es *EditionStorage) GetAll(args *models.BatchArgs) ([]*models.EditionRead, error) {
 	query := fmt.Sprintf(
 		"SELECT edition_id, year, number, volume, cover_path, file_path, date FROM %s",
 		es.table,
 	)
-	rows, err := es.db.Query(query)
+
+	queryBatch := utils.AddBatchToQuery(query, args)
+
+	rows, err := es.db.Query(queryBatch)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +83,10 @@ func (es *EditionStorage) FindOne(id string) (*models.EditionRead, error) {
 		"SELECT edition_id, year, number, volume, cover_path, file_path, date FROM %s WHERE edition_id = $1",
 		es.table,
 	)
-	err := es.db.QueryRow(query, id).
-		Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.ImageID, &edition.DocumentID, &edition.Date)
 
+	row := es.db.QueryRow(query, id)
+
+	err := row.Scan(&edition.Id, &edition.Year, &edition.Number, &edition.Volume, &edition.ImageID, &edition.DocumentID, &edition.Date)
 	if err != nil {
 		return nil, err
 	}
