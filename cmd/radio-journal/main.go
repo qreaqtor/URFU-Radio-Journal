@@ -28,7 +28,6 @@ import (
 	filest "urfu-radio-journal/internal/storage/minio/files"
 	miniost "urfu-radio-journal/internal/storage/minio/setup"
 	articlest "urfu-radio-journal/internal/storage/postgres/article"
-	authorst "urfu-radio-journal/internal/storage/postgres/author"
 	commentst "urfu-radio-journal/internal/storage/postgres/comments"
 	councilst "urfu-radio-journal/internal/storage/postgres/council"
 	editionst "urfu-radio-journal/internal/storage/postgres/edition"
@@ -98,7 +97,6 @@ func main() {
 	editionStorage := editionst.NewEditionStorage(dbPostgres, editionsTable)
 	redactionStorage := redactionst.NewRedactionStorage(dbPostgres, redactionTable)
 	fileInfoStorage := fileinfost.NewFileInfoStorage(dbPostgres, fileInfoTable)
-	authorStorage := authorst.NewAuthorStorage(dbPostgres, authorsTable)
 
 	buckets := make([]bucketsrv.FileRepo, 0, len(conf.Buckets))
 	for _, bucketConf := range conf.Buckets {
@@ -106,7 +104,7 @@ func main() {
 	}
 
 	// тут всех сервисов
-	articleService := articlesrv.NewArticleService(articleStorage, authorStorage)
+	articleService := articlesrv.NewArticleService(articleStorage)
 	authService := authsrv.NewAuthService(conf.AuthConfig)
 	commentService := commentsrv.NewCommentsService(commentStorage)
 	councilService := councilsrv.NewCouncilService(councilStorage)

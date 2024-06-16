@@ -2,6 +2,7 @@ package articlest
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"urfu-radio-journal/internal/models"
@@ -23,7 +24,7 @@ func NewArticleStorage(db *sql.DB, table string) *ArticleStorage {
 }
 
 func getColumns() string {
-	return "edition_id, title_ru, title_en, content_ru, content_en, keywords_ru, keywords_en, file_path, video_path, literature, reference_ru, reference_en, date_receipt, date_acceptance, doi"
+	return "edition_id, title, content, keywords, file_path, video_path, literature, reference, date_receipt, date_acceptance, doi, authors"
 }
 
 func generateValuesID(count int) string {
@@ -36,41 +37,56 @@ func generateValuesID(count int) string {
 }
 
 func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, error) {
-	var keywordsRu []string
-	var keywordsEn []string
-
-	for _, keyword := range article.Keywords {
-		keywordsRu = append(keywordsRu, keyword.Ru)
-		keywordsEn = append(keywordsEn, keyword.Eng)
-	}
-
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES (%s) RETURNING article_id;",
 		as.table,
 		getColumns(),
-		generateValuesID(15),
+		generateValuesID(12),
 	)
+
+	jsonTitle, err := json.Marshal(article.Title)
+	if err != nil {
+		return "", err
+	}
+
+	jsonContent, err := json.Marshal(article.Content)
+	if err != nil {
+		return "", err
+	}
+
+	jsonKeywords, err := json.Marshal(article.Keywords)
+	if err != nil {
+		return "", err
+	}
+
+	jsonReference, err := json.Marshal(article.Reference)
+	if err != nil {
+		return "", err
+	}
+
+	jsonAuthors, err := json.Marshal(article.Authors)
+	if err != nil {
+		return "", err
+	}
+
 	row := as.db.QueryRow(
 		query,
 		article.EditionId,
-		article.Title.Ru,
-		article.Title.Eng,
-		article.Content.Ru,
-		article.Content.Eng,
-		pq.Array(keywordsRu),
-		pq.Array(keywordsEn),
+		jsonTitle,
+		jsonContent,
+		jsonKeywords,
 		article.DocumentID,
 		article.VideoID,
 		pq.Array(article.Literature),
-		article.Reference.Ru,
-		article.Reference.Eng,
+		jsonReference,
 		article.DateReceipt,
 		article.DateAcceptance,
 		article.DOI,
+		jsonAuthors,
 	)
 
 	var articleID int
-	err := row.Scan(&articleID)
+	err = row.Scan(&articleID)
 	if err != nil {
 		return "", err
 	}
@@ -79,6 +95,18 @@ func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, erro
 }
 
 func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead, error) {
+	var title models.Text
+	var content models.Text
+	var keywords []models.Text
+	var reference models.Text
+	var authors []models.Author
+
+	var jsonTitle []byte
+	var jsonContent []byte
+	var jsonKeywords []byte
+	var jsonReference []byte
+	var jsonAuthors []byte
+
 	query := fmt.Sprintf(
 		"SELECT article_id, %s FROM %s WHERE edition_id = $1",
 		getColumns(),
@@ -100,26 +128,21 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 	for rows.Next() {
 		var literatureArray pq.StringArray
 		var article models.ArticleRead
-		var keywordsRu pq.StringArray
-		var keywordsEn pq.StringArray
 
 		err := rows.Scan(
 			&article.Id,
 			&article.EditionId,
-			&article.Title.Ru,
-			&article.Title.Eng,
-			&article.Content.Ru,
-			&article.Content.Eng,
-			&keywordsRu,
-			&keywordsEn,
+			&jsonTitle,
+			&jsonContent,
+			&jsonKeywords,
 			&article.DocumentID,
 			&article.VideoID,
 			&literatureArray,
-			&article.Reference.Ru,
-			&article.Reference.Eng,
+			&jsonReference,
 			&article.DateReceipt,
 			&article.DateAcceptance,
 			&article.DOI,
+			&jsonAuthors,
 		)
 		if err != nil {
 			return nil, err
@@ -129,15 +152,36 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 			article.Literature = append(article.Literature, literatureArray[i])
 		}
 
-		article.Keywords = make([]models.Text, 0)
-
-		for i := 0; i < len(keywordsRu); i++ {
-			keyword := models.Text{
-				Ru:  keywordsRu[i],
-				Eng: keywordsEn[i],
-			}
-			article.Keywords = append(article.Keywords, keyword)
+		err = json.Unmarshal(jsonTitle, &title)
+		if err != nil {
+			return nil, err
 		}
+
+		err = json.Unmarshal(jsonContent, &content)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(jsonKeywords, &keywords)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(jsonReference, &reference)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(jsonAuthors, &authors)
+		if err != nil {
+			return nil, err
+		}
+
+		article.Title = title
+		article.Content = content
+		article.Keywords = keywords
+		article.Reference = reference
+		article.Authors = authors
 
 		articles = append(articles, &article)
 	}
@@ -150,8 +194,18 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 }
 
 func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, error) {
-	var keywordsRu pq.StringArray
-	var keywordsEn pq.StringArray
+	var title models.Text
+	var content models.Text
+	var keywords []models.Text
+	var reference models.Text
+	var authors []models.Author
+
+	var jsonTitle []byte
+	var jsonContent []byte
+	var jsonKeywords []byte
+	var jsonReference []byte
+	var jsonAuthors []byte
+
 	var literatureArray pq.StringArray
 
 	query := fmt.Sprintf(
@@ -165,20 +219,17 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 	err := row.Scan(
 		&article.Id,
 		&article.EditionId,
-		&article.Title.Ru,
-		&article.Title.Eng,
-		&article.Content.Ru,
-		&article.Content.Eng,
-		&keywordsRu,
-		&keywordsEn,
+		&jsonTitle,
+		&jsonContent,
+		&jsonKeywords,
 		&article.DocumentID,
 		&article.VideoID,
 		&literatureArray,
-		&article.Reference.Ru,
-		&article.Reference.Eng,
+		&jsonReference,
 		&article.DateReceipt,
 		&article.DateAcceptance,
 		&article.DOI,
+		&jsonAuthors,
 	)
 	if err != nil {
 		return nil, err
@@ -188,15 +239,36 @@ func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, err
 		article.Literature = append(article.Literature, literatureArray[i])
 	}
 
-	article.Keywords = make([]models.Text, 0)
-
-	for i := 0; i < len(keywordsRu); i++ {
-		keyword := models.Text{
-			Ru:  keywordsRu[i],
-			Eng: keywordsEn[i],
-		}
-		article.Keywords = append(article.Keywords, keyword)
+	err = json.Unmarshal(jsonTitle, &title)
+	if err != nil {
+		return nil, err
 	}
+
+	err = json.Unmarshal(jsonContent, &content)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(jsonKeywords, &keywords)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(jsonReference, &reference)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(jsonAuthors, &authors)
+	if err != nil {
+		return nil, err
+	}
+
+	article.Title = title
+	article.Content = content
+	article.Keywords = keywords
+	article.Reference = reference
+	article.Authors = authors
 
 	return article, nil
 }
@@ -247,51 +319,63 @@ func (as *ArticleStorage) GetVideoID(idStr string) (string, error) {
 }
 
 func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
-	var keywordsRu []string
-	var keywordsEn []string
-
-	for _, keyword := range newArticle.Keywords {
-		keywordsRu = append(keywordsRu, keyword.Ru)
-		keywordsEn = append(keywordsEn, keyword.Eng)
-	}
-
 	query := `
 	UPDATE articles
 	SET
-	title_ru = $2, 
-	title_en = $3, 
-	content_ru = $4, 
-	content_en = $5, 
-	keywords_ru = $6, 
-	keywords_en = $7, 
-	file_path = $8, 
-	video_path = $9, 
-	literature = $10, 
-	reference_ru = $11, 
-	reference_en = $12, 
-	date_receipt = $13, 
-	date_acceptance = $14, 
-	doi = $15
+	title = $2, 
+	content = $3, 
+	keywords = $4, 
+	file_path = $5, 
+	video_path = $6, 
+	literature = $7, 
+	reference = $8, 
+	date_receipt = $9, 
+	date_acceptance = $10, 
+	doi = $11,
+	authors = $12
 	WHERE
 		article_id = $1
 `
-	_, err := as.db.Exec(
+
+	jsonTitle, err := json.Marshal(newArticle.Title)
+	if err != nil {
+		return err
+	}
+
+	jsonContent, err := json.Marshal(newArticle.Content)
+	if err != nil {
+		return err
+	}
+
+	jsonKeywords, err := json.Marshal(newArticle.Keywords)
+	if err != nil {
+		return err
+	}
+
+	jsonReference, err := json.Marshal(newArticle.Reference)
+	if err != nil {
+		return err
+	}
+
+	jsonAuthors, err := json.Marshal(newArticle.Authors)
+	if err != nil {
+		return err
+	}
+
+	_, err = as.db.Exec(
 		query,
 		&newArticle.Id,
-		&newArticle.Title.Ru,
-		&newArticle.Title.Eng,
-		&newArticle.Content.Ru,
-		&newArticle.Content.Eng,
-		pq.Array(&keywordsRu),
-		pq.Array(&keywordsEn),
+		&jsonTitle,
+		&jsonContent,
+		&jsonKeywords,
 		&newArticle.DocumentID,
 		&newArticle.VideoID,
 		pq.Array(&newArticle.Literature),
-		&newArticle.Reference.Ru,
-		&newArticle.Reference.Eng,
+		&jsonReference,
 		&newArticle.DateReceipt,
 		&newArticle.DateAcceptance,
 		&newArticle.DOI,
+		&jsonAuthors,
 	)
 	if err != nil {
 		return err
