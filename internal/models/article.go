@@ -51,6 +51,15 @@ type ArticleUpdate struct {
 }
 
 type ArticleQuery struct {
-	EditionID int `form:"editionId" binding:"required"`
 	BatchArgs
+	ArticleSearch
+}
+
+type ArticleSearch struct {
+	EditionID int    `form:"editionId"`
+	Search    string `form:"search" binding:"required_if=EditionID 0"`
+	Title     *bool  `form:"title"`
+	//Keywords  *bool  `form:"keywords"`
+	//Authors    *bool  `form:"authors"`
+	Affilation *bool `form:"affilation"`
 }

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/internal/storage/postgres/utils"
+	"urfu-radio-journal/internal/utils"
 
 	"github.com/lib/pq"
 )
@@ -95,29 +96,30 @@ func (as *ArticleStorage) InsertOne(article *models.ArticleCreate) (string, erro
 }
 
 func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead, error) {
-	var title models.Text
-	var content models.Text
-	var keywords []models.Text
-	var reference models.Text
-	var authors []models.Author
+	var title, content, reference models.Text
+	keywords := []models.Text{}
+	authors := []models.Author{}
 
-	var jsonTitle []byte
-	var jsonContent []byte
-	var jsonKeywords []byte
-	var jsonReference []byte
-	var jsonAuthors []byte
+	var jsonTitle, jsonContent, jsonKeywords, jsonReference, jsonAuthors []byte
 
 	query := fmt.Sprintf(
-		"SELECT article_id, %s FROM %s WHERE edition_id = $1",
+		"SELECT article_id, %s FROM %s",
 		getColumns(),
 		as.table,
 	)
 
-	queryBatch := utils.AddBatchToQuery(query, &args.BatchArgs)
+	query, isSearch := utils.AddSearchToQuery(query, args.ArticleSearch)
+
+	query = utils.AddBatchToQuery(query, &args.BatchArgs)
+
+	search := fmt.Sprint(args.EditionID)
+	if isSearch {
+		search = strings.ReplaceAll(args.Search, " ", " | ")
+	}
 
 	fmt.Println(query)
 
-	rows, err := as.db.Query(queryBatch, args.EditionID)
+	rows, err := as.db.Query(query, search)
 	if err != nil {
 		return nil, err
 	}
@@ -194,17 +196,11 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 }
 
 func (as *ArticleStorage) FindOne(articleIdStr string) (*models.ArticleRead, error) {
-	var title models.Text
-	var content models.Text
-	var keywords []models.Text
-	var reference models.Text
-	var authors []models.Author
+	var title, content, reference models.Text
+	keywords := []models.Text{}
+	authors := []models.Author{}
 
-	var jsonTitle []byte
-	var jsonContent []byte
-	var jsonKeywords []byte
-	var jsonReference []byte
-	var jsonAuthors []byte
+	var jsonTitle, jsonContent, jsonKeywords, jsonReference, jsonAuthors []byte
 
 	var literatureArray pq.StringArray
 

@@ -1,9 +1,9 @@
 package commentsrv
 
 import (
-	"fmt"
 	"unicode"
 	"urfu-radio-journal/internal/models"
+	"urfu-radio-journal/internal/utils"
 )
 
 type storage interface {
@@ -26,36 +26,14 @@ func NewCommentsService(storage storage) *CommentsService {
 }
 
 func (cs *CommentsService) Create(comment *models.CommentCreate) error {
-	unicodeRange, err := cs.determineLanguage(comment.ContentPart)
-	if err != nil {
-		return err
-	}
+	unicodeRange := utils.DetermineLanguage(comment.ContentPart)
 	if unicodeRange == unicode.Latin {
 		comment.Content.Eng = comment.ContentPart
 	} else {
 		comment.Content.Ru = comment.ContentPart
 	}
-	_, err = cs.repo.InsertOne(comment)
+	_, err := cs.repo.InsertOne(comment)
 	return err
-}
-
-func (cs *CommentsService) determineLanguage(str string) (unicodeRange *unicode.RangeTable, err error) {
-	ruCount, engCount := 0, 0
-	for _, r := range str {
-		if unicode.Is(unicode.Cyrillic, r) {
-			ruCount++
-		} else if unicode.Is(unicode.Latin, r) {
-			engCount++
-		} else if !unicode.In(r, unicode.Cyrillic, unicode.Latin, unicode.Number, unicode.Space, unicode.Punct) {
-			return nil, fmt.Errorf("the string contains an unsupported character: \"%s\"", string(r))
-		}
-	}
-	if ruCount > engCount {
-		unicodeRange = unicode.Cyrillic
-	} else {
-		unicodeRange = unicode.Latin
-	}
-	return unicodeRange, err
 }
 
 func (cs *CommentsService) GetAll(args *models.CommentQuery) ([]*models.CommentRead, int, error) {
@@ -81,10 +59,7 @@ func (cs *CommentsService) Delete(id string) error {
 }
 
 func (cs *CommentsService) Approve(commentApprove *models.CommentApprove) error {
-	unicodeRange, err := cs.determineLanguage(commentApprove.ContentPart)
-	if err != nil {
-		return err
-	}
+	unicodeRange := utils.DetermineLanguage(commentApprove.ContentPart)
 	contentField := "content_ru"
 	if unicodeRange == unicode.Latin {
 		contentField = "content_en"

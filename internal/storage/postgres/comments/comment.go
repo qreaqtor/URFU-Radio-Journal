@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"urfu-radio-journal/internal/models"
-	"urfu-radio-journal/internal/storage/postgres/utils"
+	"urfu-radio-journal/internal/utils"
 )
 
 type CommentsStorage struct {
