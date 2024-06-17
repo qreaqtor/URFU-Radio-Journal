@@ -37,17 +37,3 @@ func (a *AuthHandler) Login(ctx *gin.Context) {
 		"Token":   token,
 	})
 }
-
-// func (this *AuthController) logout(ctx *gin.Context) {
-// 	session := sessions.Default(ctx)
-// 	if err := this.auth.Logout(session); err != nil {
-// 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
-// 		return
-// 	}
-// 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
-// }
-
-// func (a *AuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
-// 	rg.POST("/login", a.login)
-// 	// rg.GET("/logout", this.logout)
-// }

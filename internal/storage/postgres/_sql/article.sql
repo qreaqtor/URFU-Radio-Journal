@@ -30,8 +30,8 @@ CREATE INDEX idx_title_Eng ON "articles" USING gin (to_tsvector('english', title
 CREATE INDEX idx_content_Ru ON "articles" USING gin (to_tsvector('russian', content->>'Ru'));
 CREATE INDEX idx_content_Eng ON "articles" USING gin (to_tsvector('english', content->>'Eng'));
 
--- CREATE INDEX idx_authors_fullname_ru ON "articles" USING gin (to_tsvector('russian', jsonb_array_elements_text(authors->'fullname'->'Ru')));
--- CREATE INDEX idx_authors_fullname_eng ON "articles" USING gin (to_tsvector('english', jsonb_array_elements_text(authors->'fullname'->'Eng')));
+CREATE INDEX idx_authors_fullname_ru ON "articles" USING gin (to_tsvector('russian', authors));
+CREATE INDEX idx_authors_fullname_eng ON "articles" USING gin (to_tsvector('english', authors));
 
--- CREATE INDEX idx_keywords_ru ON "articles" USING gin (to_tsvector('russian', jsonb_array_elements_text(keywords)->>'Ru'));
--- CREATE INDEX idx_keywords_eng ON "articles" USING gin (to_tsvector('english', jsonb_array_elements_text(keywords)->>'Eng'));
+CREATE INDEX idx_keywords_ru ON "articles" USING gin (to_tsvector('russian', keywords));
+CREATE INDEX idx_keywords_eng ON "articles" USING gin (to_tsvector('english', keywords));

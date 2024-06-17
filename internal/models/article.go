@@ -56,10 +56,10 @@ type ArticleQuery struct {
 }
 
 type ArticleSearch struct {
-	EditionID int    `form:"editionId"`
-	Search    string `form:"search" binding:"required_if=EditionID 0"`
-	Title     *bool  `form:"title"`
-	//Keywords  *bool  `form:"keywords"`
-	//Authors    *bool  `form:"authors"`
-	Affilation *bool `form:"affilation"`
+	EditionID  int    `form:"editionId"`
+	Search     string `form:"search" binding:"required_if=EditionID 0"`
+	Title      *bool  `form:"title"`
+	Keywords   *bool  `form:"keywords"`
+	Authors    *bool  `form:"authors"`
+	Affilation *bool  `form:"affilation"`
 }

@@ -24,23 +24,23 @@ func AddSearchToQuery(query string, args models.ArticleSearch) (string, bool) {
 		language = "english"
 	}
 
-	generate := getGenerateFunc(language, key)
+	generate := getGenerateFunc(language)
 
 	if checkBoolPtr(args.Title) {
-		query += generate("title")
+		query += generate(fmt.Sprintf("title ->> '%s'", key))
 	}
 
 	if checkBoolPtr(args.Affilation) {
-		query += generate("content")
+		query += generate(fmt.Sprintf("content ->>  '%s'", key))
 	}
 
-	// if checkBoolPtr(args.Authors) {
-	// 	query += generate("jsonb_array_elements_text(authors->'fullname')")
-	// }
+	if checkBoolPtr(args.Authors) {
+		query += generate("authors")
+	}
 
-	// if checkBoolPtr(args.Keywords) {
-	// 	query += generate("jsonb_array_elements_text(keywords)")
-	// }
+	if checkBoolPtr(args.Keywords) {
+		query += generate("keywords")
+	}
 
 	return query, true
 }
@@ -49,11 +49,11 @@ func checkBoolPtr(b *bool) bool {
 	return b != nil && *b
 }
 
-func getGenerateFunc(language, key string) func(field string) string {
+func getGenerateFunc(language string) func(field string) string {
 	i := 0
 	return func(field string) string {
 		i++
-		condition := fmt.Sprintf("to_tsvector('%s', %s->>'%s') @@ websearch_to_tsquery('%s', $1)", language, field, key, language)
+		condition := fmt.Sprintf("to_tsvector('%s', %s) @@ websearch_to_tsquery('%s', $1)", language, field, language)
 		if i > 1 {
 			return " OR " + condition
 		}
