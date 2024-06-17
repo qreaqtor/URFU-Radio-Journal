@@ -110,13 +110,13 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 
 	query, isSearch := utils.AddSearchToQuery(query, &args.ArticleSearch)
 
-	query = utils.AddBatchToQuery(query, &args.BatchArgs)
-
 	search := fmt.Sprint(args.EditionID)
 	if isSearch {
 		search = strings.ReplaceAll(args.Search, " ", " | ")
 		query += " ORDER BY article_id DESC"
 	}
+
+	query = utils.AddBatchToQuery(query, &args.BatchArgs)
 
 	rows, err := as.db.Query(query, search)
 	if err != nil {
