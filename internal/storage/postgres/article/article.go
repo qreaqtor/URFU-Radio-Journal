@@ -108,16 +108,15 @@ func (as *ArticleStorage) Find(args *models.ArticleQuery) ([]*models.ArticleRead
 		as.table,
 	)
 
-	query, isSearch := utils.AddSearchToQuery(query, args.ArticleSearch)
+	query, isSearch := utils.AddSearchToQuery(query, &args.ArticleSearch)
 
 	query = utils.AddBatchToQuery(query, &args.BatchArgs)
 
 	search := fmt.Sprint(args.EditionID)
 	if isSearch {
 		search = strings.ReplaceAll(args.Search, " ", " | ")
+		query += " ORDER BY article_id DESC"
 	}
-
-	fmt.Println(query)
 
 	rows, err := as.db.Query(query, search)
 	if err != nil {
@@ -380,13 +379,19 @@ func (as *ArticleStorage) UpdateOne(newArticle *models.ArticleUpdate) error {
 	return nil
 }
 
-func (as *ArticleStorage) GetCount() (int, error) {
+func (as *ArticleStorage) GetCount(args *models.ArticleSearch) (int, error) {
 	query := fmt.Sprintf(
 		"SELECT COUNT(*) FROM %s",
 		as.table,
 	)
 
-	row := as.db.QueryRow(query)
+	query, isSearch := utils.AddSearchToQuery(query, args)
+	search := fmt.Sprint(args.EditionID)
+	if isSearch {
+		search = strings.ReplaceAll(args.Search, " ", " | ")
+	}
+
+	row := as.db.QueryRow(query, search)
 
 	count := 0
 	err := row.Scan(&count)

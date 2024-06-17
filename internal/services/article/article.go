@@ -15,7 +15,7 @@ type articleStorage interface {
 	FindOne(string) (*models.ArticleRead, error)
 	UpdateOne(*models.ArticleUpdate) error
 	Delete(string) error
-	GetCount() (int, error)
+	GetCount(*models.ArticleSearch) (int, error)
 }
 
 type ArticleService struct {
@@ -43,7 +43,7 @@ func (as *ArticleService) GetAll(args *models.ArticleQuery) ([]*models.ArticleRe
 		return nil, 0, err
 	}
 
-	count, err := as.articleRepo.GetCount()
+	count, err := as.articleRepo.GetCount(&args.ArticleSearch)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -77,6 +77,6 @@ func (as *ArticleService) Delete(id string) error {
 	if id == "" {
 		return errBadId
 	}
-	
+
 	return as.articleRepo.Delete(id)
 }

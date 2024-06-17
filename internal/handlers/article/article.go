@@ -1,7 +1,6 @@
 package articlehand
 
 import (
-	"fmt"
 	"net/http"
 	"urfu-radio-journal/internal/models"
 
@@ -50,7 +49,6 @@ func (a *ArticleHandler) GetAllArticles(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	fmt.Printf("%+v\n", args)
 
 	result, count, err := a.articles.GetAll(args)
 	if err != nil {

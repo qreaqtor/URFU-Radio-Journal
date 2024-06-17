@@ -8,7 +8,7 @@ import (
 
 // if args contains editionID then other fields will be ignored, because
 // other fields should be used only for searching and editionID should be used only for getting edition's articles
-func AddSearchToQuery(query string, args models.ArticleSearch) (string, bool) {
+func AddSearchToQuery(query string, args *models.ArticleSearch) (string, bool) {
 	query += " WHERE "
 
 	if args.EditionID != 0 {
