@@ -28,7 +28,7 @@ fi
 ENV=$(extract_value env $FILE)
 
 if [[ $ENV == 'prod' ]]; then
-    export CONFIG_PATH=$FILE
+    export CONFIG_PATH=${FILE#*server/}
     docker-compose up -d
 else
     docker-compose up -d minio postgres prometheus grafana
@@ -36,5 +36,5 @@ fi
 
 if [[ $CLEAR == '-c' ]]; then
     read
-    docker-compose down -v && docker rmi urfu-radio-journal-radiojournal
+    docker-compose down -v && docker rmi urfu-radio-journal-radiojournal-server
 fi

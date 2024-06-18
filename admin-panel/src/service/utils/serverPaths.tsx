@@ -1,0 +1,1 @@
+export const serverUrl = "http://radiojournal-server:8080";
