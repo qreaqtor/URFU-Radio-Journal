@@ -1,1 +1,1 @@
-export const serverUrl = "http://radiojournal-server:8080";
+export const serverUrl = "http://host.docker.internal:8080";

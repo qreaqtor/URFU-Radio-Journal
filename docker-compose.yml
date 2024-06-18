@@ -8,7 +8,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - './internal/storage/postgres/_sql/:/docker-entrypoint-initdb.d/'
+      - './config/postgres/_sql/:/docker-entrypoint-initdb.d/'
 
   minio:
     image: minio/minio:latest
@@ -66,7 +66,7 @@ services:
       - "./config/grafana/datasources:/etc/grafana/provisioning/datasources"
 
   nginx:
-    image: nginx:1.15.3
+    image: nginx:alpine3.19
     links:
       - grafana:grafana
       - prometheus:prometheus

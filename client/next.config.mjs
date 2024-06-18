@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  optimizeFonts: false,
+  reactStrictMode: true,
   images: {
-    domains: ["158.160.173.39", '158.160.135.237']
+    domains: [
+      "158.160.135.237",
+      "host.docker.internal",
+    ],
   },
 };
 

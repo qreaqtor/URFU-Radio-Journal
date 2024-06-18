@@ -30,7 +30,7 @@ func GetConnect(conf config.PostgresConfig, ssl bool) (*sql.DB, error) {
 		return nil, fmt.Errorf("error while connecting to PostgreSQL: %v", err)
 	}
 
-	tiker := time.NewTicker(time.Millisecond * 500)
+	tiker := time.NewTicker(time.Second)
 	for i := 0; i < conf.ConnAttempts; i++ {
 		_, ok := <-tiker.C
 		if !ok {
