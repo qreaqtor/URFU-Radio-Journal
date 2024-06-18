@@ -12,7 +12,6 @@ export const getComments = async (
   let allCount = 0
   const response = await axios.get(`${serverUrl}/api/v1/comments/get/all?onlyApproved=${isApproved}&articleId=${id}&offset=${offset}&limit=${limit}`)
     .then((response) => {
-      console.log(response.data);
       if (response.data.all_count == 0) {
         return []
       }

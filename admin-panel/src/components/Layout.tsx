@@ -5,6 +5,7 @@ import Page from './Page';
 const setActiveLink = ({isActive}: {isActive: boolean}) => isActive ? 'header__group-link header__group-link-active' : 'header__group-link';
 
 const Layout = () => {
+  const date = new Date();
   return (
     <div className="wrapper">
       <header className='header'>
@@ -28,7 +29,7 @@ const Layout = () => {
       
 
       <footer className='footer'>
-        <div className="footer__text">2023 г. Издательство Уральского университета Россия, 620083, Екатеринбург, ул. Тургенева, 4</div>
+        <div className="footer__text">{date.getFullYear()} г. Издательство Уральского университета Россия, 620083, Екатеринбург, ул. Тургенева, 4</div>
       </footer>
     </div>
   );

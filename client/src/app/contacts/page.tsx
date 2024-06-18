@@ -6,6 +6,7 @@ import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@tanstack/react-query';
 import { getReductors } from '@/data/ReductorService';
 import Reductor from '@/components/Reductor';
+import { YMaps, Map, Placemark } from '@pbe/react-yandex-maps';
 
 const ContactsPage = () => {
   const {status: reductorsStatus, data: reductors} = useQuery({
@@ -20,9 +21,16 @@ const ContactsPage = () => {
       <div className="contacts__address contacts__text"><FormattedMessage id='contacts-address1' /></div>
       <div className="contacts__address contacts__text"><FormattedMessage id='contacts-address2' /></div>
       <div className="contacts__address contacts__address_last contacts__text"><FormattedMessage id='contacts-address3' /></div>
-      <div className="contacts__map">
+      {/* <div className="contacts__map">
         <Image src={map} alt="" />
-      </div>
+      </div> */}
+      <YMaps>
+        <div>
+          <Map defaultState={{ center: [56.840959, 60.651100], zoom: 16 }} width={750} height={400}>
+            <Placemark geometry={[56.840959, 60.651100]} />
+          </Map>
+        </div>
+      </YMaps>
       {/* <div className="contacts__editor contacts__title"><FormattedMessage id='contacts-editor' /></div>
       <div className="contacts__editor-information">
         <div className="contacts__editor-information-name contacts__text"><FormattedMessage id='contacts-editor-information-name' /></div>

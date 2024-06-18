@@ -6,6 +6,9 @@ import { serverUrl } from "@/lib/utils";
 export const getCouncils = async (): Promise<ICouncil[]> => {
   const response = await axios.get(`${serverUrl}/api/v1/council/members/get/all`)
     .then((response) => {
+      if (!response.data.data) {
+        return []
+      }
       return response.data.data;
     }).catch((error: Error) => {
       throw new Error(error.message);

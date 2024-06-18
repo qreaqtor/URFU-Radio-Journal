@@ -9,6 +9,9 @@ export const getIssues = async (offset: number, limit: number): Promise<{allCoun
   let allCount = 0;
   const response = await axios.get(`${serverUrl}/api/v1/editions/get/all?offset=${offset}&limit=${limit}`)
     .then((response) => {
+      if (response.data.all_count == 0) {
+        return [];
+      }
       allCount = response.data.all_count;
       return response["data"]["data"].sort((issue: IIssue, issue2: IIssue) => {
         return issue2.year - issue.year || issue2.volume - issue.volume || issue2.number - issue.number
@@ -17,7 +20,6 @@ export const getIssues = async (offset: number, limit: number): Promise<{allCoun
       console.log(error);
       throw new Error(error.message);
     }); 
-    console.log(response);
   return {allCount: allCount, data: response};
 }
 
@@ -60,7 +62,6 @@ export const getArticlesBySearch = async (search: string): Promise<IArticle[]> =
 
     return titleRu || titleEng || authorsRu || authorsEng || keyWordsRu || keyWordsEng;
   });
-  console.log(articles);
   return articles;
 }
 

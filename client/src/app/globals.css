@@ -169,6 +169,8 @@ footer {
   height: 44px;
   /* border: 1px solid #000; */
   background-image: url('/assets/_logo _urj 2.svg');
+  /* border-radius: 600px; */
+  border-radius: 100%;
   background-color:  #000;
   margin-right: 10px;
 }

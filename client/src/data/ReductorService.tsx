@@ -6,6 +6,9 @@ import { serverUrl } from "@/lib/utils";
 export const getReductors = async (): Promise<IReductor[]> => {
   const response = await axios.get(`${serverUrl}/api/v1/redaction/members/get/all`)
     .then((response) => {
+      if (!response.data.data) {
+        return []
+      }
       return response.data.data;
     }).catch((error: Error) => {
       throw new Error(error.message);

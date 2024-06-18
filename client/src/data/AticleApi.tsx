@@ -6,6 +6,9 @@ import { serverUrl } from "@/lib/utils";
 export const getArticles = async (editionId: string): Promise<IArticle[]> => {
   const response = await axios.get(`${serverUrl}/api/v1/article/get/all?editionId=${editionId}`)
     .then((response) => {
+      if (!response.data.data) {
+        return []
+      }
       return response.data.data;
     }).catch((error: Error) => {
       throw new Error(error.message);
