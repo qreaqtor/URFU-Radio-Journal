@@ -69,7 +69,6 @@ services:
   nginx:
     image: nginx:alpine3.19
     links:
-      - grafana:grafana
       - prometheus:prometheus
       - radiojournal-admin-panel:radiojournal-admin-panel
       - radiojournal-client:radiojournal-client
