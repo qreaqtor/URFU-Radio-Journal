@@ -58,6 +58,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     restart: unless-stopped
+    environment:
+      - GF_SERVER_ROOT_URL=http://nginx:80/grafana
     links:
       - prometheus:prometheus
     ports:
@@ -74,6 +76,7 @@ services:
       - radiojournal-client:radiojournal-client
       - radiojournal-server:radiojournal-server
       - minio:minio
+      - grafana:grafana
     volumes:
       - ./config/nginx:/etc/nginx/conf.d
     ports:
