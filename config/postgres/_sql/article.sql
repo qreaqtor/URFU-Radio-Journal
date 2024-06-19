@@ -8,7 +8,7 @@ CREATE TABLE "articles" (
     "literature" text[] NOT NULL,
     "edition_id" integer NOT NULL,
     "file_path" character varying(1000) NOT NULL,
-    "video_path" character varying(1000) NOT NULL,
+    "video_path" character varying(1000),
     "date_receipt" date NOT NULL,
     "date_acceptance" date NOT NULL,
     "doi" character varying(1000) NOT NULL,

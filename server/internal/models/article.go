@@ -11,7 +11,7 @@ type ArticleCreate struct {
 	Content        Text      `json:"content" bson:"content" binding:"required"`
 	Keywords       []Text    `json:"keywords" bson:"keywords" binding:"required"`
 	DocumentID     string    `json:"documentID" bson:"documentID" binding:"required"`
-	VideoID        string    `json:"videoID" bson:"videoID" binding:"required"`
+	VideoID        string    `json:"videoID,omitempty" bson:"videoID" binding:"-"`
 	Literature     []string  `json:"literature" bson:"literature" binding:"required"`
 	Reference      Text      `json:"reference" bson:"reference" binding:"required"`
 	DateReceipt    time.Time `json:"dateReceipt" bson:"dateReceipt" binding:"required"`
@@ -27,7 +27,7 @@ type ArticleRead struct {
 	Content        Text      `json:"content" bson:"content" binding:"required"`
 	Keywords       []Text    `json:"keywords" bson:"keywords" binding:"required"`
 	DocumentID     string    `json:"documentID" bson:"documentID" binding:"required"`
-	VideoID        string    `json:"videoID" bson:"videoID" binding:"required"`
+	VideoID        string    `json:"videoID,omitempty" bson:"videoID" binding:"-"`
 	Literature     []string  `json:"literature" bson:"literature" binding:"required"`
 	Reference      Text      `json:"reference" bson:"reference" binding:"required"`
 	DateReceipt    time.Time `json:"dateReceipt" bson:"dateReceipt" binding:"required"`
