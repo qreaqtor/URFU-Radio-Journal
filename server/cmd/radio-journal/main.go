@@ -146,8 +146,8 @@ func main() {
 
 	commentRouter := router.Group("/comments")
 	commentRouter.POST("/create", commentHandler.Create)
-	
-	commentRouter.GET("/get/all", middleware.CheckApproved, authMiddleware, commentHandler.GetAll)
+
+	commentRouter.GET("/get/all", commentHandler.GetAll)
 
 	commentRouter.PATCH("/update", authMiddleware, commentHandler.Update)
 	commentRouter.PATCH("/approve", authMiddleware, commentHandler.Approve)
